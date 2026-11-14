@@ -110,6 +110,20 @@
         </div>
 
         <!-- Submit Button -->
+        <div class="field">
+          <label class="label" for="suspected-encounters">Suspected encounters</label>
+          <div class="control">
+           <input
+            class="input"
+            id="suspected-encounters"
+            type="number"
+            min="0"
+            step="1"
+            value="0"
+            required
+           >
+          </div>
+        </div>
         <div class="control">
           <button class="button is-black is-large" type="submit">SUBMIT</button>
         </div>
@@ -145,7 +159,9 @@
         const day = document.getElementById('day-of-week').value;
         const server = document.getElementById('server').value;
 
-        const report = { time, day, server };
+        const suspectedEncounters = document.getElementById('suspected-encounters').valueAsNumber;
+
+        const report = { time, day, server, suspectedEncounters };
 
         const results = JSON.parse(localStorage.getItem('results')) || [];
         results.push(report);

@@ -226,6 +226,7 @@
               <p><strong>Time:</strong> ${entry.time}</p>
               <p><strong>Day:</strong> ${entry.day}</p>
               <p><strong>Server:</strong> ${entry.server}</p>
+              <p><strong>Suspected encounters:</strong> ${entry.suspectedEncounters ?? 'Not recorded'}</p>
               <button class="button is-danger delete-btn" onclick="openDeleteEntryModal(${index})">Delete Entry</button>
             </div>
           `).join('') 
