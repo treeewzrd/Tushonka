@@ -1,203 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EFT Cheater Tracker</title>
-    <link rel="stylesheet" href="project.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tushonka</title>
+  <link rel="stylesheet" href="css/app.css">
+<script src="js/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">Tushonka.</a>
 
-    <style>
-      /* Ensuring the body takes full height and uses flexbox */
-      html, body {
-        height: 100%;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        background-image: url('images/soldiers.jpg');
-        background-size: cover;
-        background-position: center;
-      }
+    <nav class="main-nav" aria-label="Main navigation">
+      <button type="button" disabled>Profile</button>
+      <button type="button" disabled>Settings</button>
+      <button type="button" disabled>Log in</button>
+      <button type="button" disabled>Create account</button>
+    </nav>
+  </header>
 
-      .container {
-        flex: 1;
-        padding-bottom: 60px; 
-      }
+  <main>
+    <section class="hero home-section" aria-labelledby="home-title">
+      <p class="eyebrow">Escape from Tarkov encounter tracker</p>
 
-      .footer {
-        background-color: transparent;
-        color: #32CD32; 
-        text-align: center;
-        padding: 1rem 0;
-        width: 100%;
-        position: relative;
-        bottom: 0;
-        font-family: 'Press Start 2P', cursive;
-      }
+      <h1 id="home-title">Tushonka.</h1>
 
-      .footer img {
-        max-width: 100px; 
-        margin-top: 10px;
-      }
+      <p class="tagline">
+        A personal tracker for logging encounters with cheaters
+        in Escape from Tarkov.
+      </p>
 
-      /* Space between buttons */
-      .control + .control {
-        margin-top: 10px;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Centered container with transparent background -->
-    <div class="container content-box">
-      <h1 class="title main-title" style="color: #32CD32;">EFT CHEATER TRACKER</h1>
-      <h2 class="subtitle subtitle-text">
-        <span class="larger-text">TRACK REPORTS OF CHEATERS IN ESCAPE FROM TARKOV</span>
-        <br>
-        <span class="button-like-text">AFTER FILLING IN ALL THREE DROPDOWN MENUS</span>
-        <br>
-        <span class="submit-text">CLICK <strong>SUBMIT</strong> BELOW TO SEND YOUR REPORT</span>
-      </h2>
+      <button class="primary-action" id="start-encounter" type="button">
+        CHEATER SPOTTED
+        </button>
 
-      <!-- Form for Selecting Details -->
-      <form id="tracker-form">
-        <!-- Time of Day -->
-        <div class="field">
-          <label class="label">Time of Day</label>
-          <div class="control select">
-            <select id="time-of-day" required>
-              <option value="" disabled selected>Select time of day</option>
-              <option value="0HRS-600HRS">0HRS-600HRS</option>
-              <option value="700HRS-1200HRS">700HRS-1200HRS</option>
-              <option value="1300HRS-1800HRS">1300HRS-18OOHRS</option>
-              <option value="1900HRS-2400HRS">1900HRS-2400HRS</option>
-            </select>
-          </div>
-        </div>
+      <p class="supporting-text">
+        Keep a record. Find patterns. Plan your next raid.
+      </p>
+    </section>
 
-        <!-- Day of the Week -->
-        <div class="field">
-          <label class="label">Day of the Week</label>
-          <div class="control select">
-            <select id="day-of-week" required>
-              <option value="" disabled selected>Select day</option>
-              <option value="Monday">Monday</option>
-              <option value="Tuesday">Tuesday</option>
-              <option value="Wednesday">Wednesday</option>
-              <option value="Thursday">Thursday</option>
-              <option value="Friday">Friday</option>
-              <option value="Saturday">Saturday</option>
-              <option value="Sunday">Sunday</option>
-            </select>
-          </div>
-        </div>
+    <section class="overview home-section" aria-label="Explore Tushonka">
+      <article class="overview-card">
+        <h2>Your encounters</h2>
+        <p>Review the encounters you’ve logged.</p>
+        <a href="data.html">View history →</a>
+      </article>
 
-        <!-- Server -->
-        <div class="field">
-          <label class="label">Server</label>
-          <div class="control select">
-            <select id="server" required>
-              <option value="" disabled selected>Select server</option>
-              <option value="EAST">EAST</option>
-              <option value="WEST">WEST</option>
-              <option value="CENTRAL">CENTRAL</option>
-              <option value="SOUTH">SOUTH</option>
-              <option value="SOUTHEAST">SOUTHEAST</option>
-              <option value="SOUTHWEST">SOUTHWEST</option>
-            </select>
-          </div>
-        </div>
+      <article class="overview-card">
+        <h2>Community data</h2>
+        <p>Explore encounter patterns shared by the community.</p>
+        <span class="coming-soon">Coming later</span>
+      </article>
 
-        <!-- Submit Button -->
-        <div class="field">
-          <label class="label" for="suspected-encounters">Suspected encounters</label>
-          <div class="control">
-           <input
-            class="input"
-            id="suspected-encounters"
-            type="number"
-            min="0"
-            step="1"
-            value="0"
-            required
-           >
-          </div>
-        </div>
-        <div class="control">
-          <button class="button is-black is-large" type="submit">SUBMIT</button>
-        </div>
+      <article class="overview-card">
+        <h2>Suggested maps</h2>
+        <p>Use encounter data to help plan where you play.</p>
+        <span class="coming-soon">Coming later</span>
+      </article>
+    </section>
+    <section id="logging-screen" class="hero" hidden>
+      <button id="back-home" type="button">← Back to home</button>
 
-        <!-- Recommendations/Graphs Button -->
-        <div class="control">
-          <button class="button is-black is-large" id="recommendations-btn" type="button">RECOMMENDATIONS/GRAPHS</button>
-        </div>
-      </form>
-    </div>
+      <p class="eyebrow">Log an encounter</p>
+      <p id="encounter-time"></p>
 
-    <!-- Modal -->
-    <div id="confirmation-modal" class="modal">
-      <div class="modal-background"></div>
-      <div class="modal-content">
-        <div class="box has-text-centered">
-          <h2 class="title is-4">REPORT SUBMITTED, BROTHER!!</h2>
-          <p>DATA HAS BEEN COLLECTED WOULD YOU LIKE TO CONTINUE!?!</p>
-          <div class="buttons is-vertical is-centered">
-            <button id="close-modal" class="button is-black has-text-white">OK</button>
-            <button id="reenter-report" class="button is-danger has-text-white">Re-enter Report</button>
-          </div>
-        </div>
+      <div id="map-step">
+        <h2>Select your map</h2>
+        <p>Choose the PvP map where the encounter happened.</p>
+
+        <div id="map-options">
+          <button type="button" class="map-options" aria-pressed="false">
+            Customs
+          </button>
+          <button type="button" class="map-option" aria-pressed="false">
+            Woods
+          </button>
       </div>
-      <button class="modal-close is-large" aria-label="close"></button>
-    </div>
 
-    <script>
-      document.getElementById('tracker-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        const time = document.getElementById('time-of-day').value;
-        const day = document.getElementById('day-of-week').value;
-        const server = document.getElementById('server').value;
-
-        const suspectedEncounters = document.getElementById('suspected-encounters').valueAsNumber;
-
-        const report = { time, day, server, suspectedEncounters };
-
-        const results = JSON.parse(localStorage.getItem('results')) || [];
-        results.push(report);
-        localStorage.setItem('results', JSON.stringify(results));
-
-        // Show the confirmation modal
-        const modal = document.getElementById('confirmation-modal');
-        modal.classList.add('is-active');
-
-        // Close the modal when the user clicks "OK"
-        document.getElementById('close-modal').addEventListener('click', function() {
-          modal.classList.remove('is-active');
-          window.location.href = 'results.html'; // Redirect to results page
-        });
-
-        // Re-enter report functionality
-        document.getElementById('reenter-report').addEventListener('click', function() {
-          modal.classList.remove('is-active');
-          document.getElementById('tracker-form').reset(); // Reset the form
-        });
-      });
-
-      // Redirect to results page when the "RECOMMENDATIONS/GRAPHS" button is clicked
-      document.getElementById('recommendations-btn').addEventListener('click', function() {
-        window.location.href = 'results.html'; // Redirect to results page
-      });
-    </script>
-
-    <!-- Footer Section -->
-    <footer class="footer">
-      <div class="footer-content">
-          <span class="footer-text">
-              CREATED BY <img class="footer-inline-gif" src="images/smiley-emoji.gif" alt="smiley emoji">TIMOTHY MCGRATH
-          </span>
-          <span class="footer-credits">USING HTML, CSS, BULMA, AND TOO MANY GOOGLE SEARCHES</span>
+      <button id="continue-encounter" class="primary-action" type="button" disabled>
+        Continue
+      </button>
       </div>
-    </footer>
-  </body>
+
+      <div id="server-step" hidden>
+        <h2 id="server-heading" tabindex="-1">Select your server region</h2>
+        <p id="selceted-map-summary"></p>
+        <p>Server Options will be added next.</p>
+        <button id="back-map" type="button">Back to maps</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Built by Timothy McGrath.</p>
+  </footer>
+</body>
 </html>
