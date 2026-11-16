@@ -14,12 +14,45 @@
     <nav class="main-nav" aria-label="Main navigation">
       <button type="button" disabled>Profile</button>
       <button type="button" disabled>Settings</button>
-      <button type="button" disabled>Log in</button>
+      <button id="show-login" type="button">Log in</button>
+      <button id="logout" type="button" hidden>Log out</button>
+      <span id="auth-status" role="status"></span>
       <button type="button" disabled>Create account</button>
     </nav>
   </header>
 
   <main>
+    <section id="login-screen" class="hero" aria-labelledby="login-heading" hidden>
+      <h2 id="login-heading">Log in</h2>
+
+      <form id="login-form">
+        <p>
+          <label for="login-username">Username</label>
+          <input
+            id="login-username"
+            name="username"
+            autocomplete="username"
+            required
+          >
+        </p>
+
+        <p>
+          <label for="login-password">Password</label>
+          <input
+            id="login-password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          >
+        </p>
+
+        <p id="login-message" role="status"></p>
+
+        <button id="submit-login" type="submit">Log in</button>
+        <button id="cancel-login" type="button">Cancel</button>
+      </form>
+    </section>
     <section class="hero home-section" aria-labelledby="home-title">
       <p class="eyebrow">Escape from Tarkov encounter tracker</p>
 
@@ -69,7 +102,7 @@
         <p>Choose the PvP map where the encounter happened.</p>
 
         <div id="map-options">
-          <button type="button" class="map-options" aria-pressed="false">
+          <button type="button" class="map-option" aria-pressed="false">
             Customs
           </button>
           <button type="button" class="map-option" aria-pressed="false">
@@ -84,7 +117,7 @@
 
       <div id="server-step" hidden>
         <h2 id="server-heading" tabindex="-1">Select your server region</h2>
-        <p id="selceted-map-summary"></p>
+        <p id="selected-map-summary"></p>
         <p>Server Options will be added next.</p>
         <button id="back-map" type="button">Back to maps</button>
       </div>
@@ -92,7 +125,7 @@
   </main>
 
   <footer class="site-footer">
-    <p>Built by Timothy McGrath.</p>
+    <p>Built by treeewzrd.</p>
   </footer>
 </body>
 </html>
