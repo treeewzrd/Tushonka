@@ -1,4 +1,4 @@
-import { API_BASE } from './api.js';
+import { login, getCurrentUser } from './api.js';
 
 export function initAuth({ showScreen }) {
 
@@ -57,14 +57,10 @@ export function initAuth({ showScreen }) {
         loginMessage.textContent = 'Logging in…';
 
         try {
-            const response = await fetch(`${API_BASE}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: loginUsername.value,
-                    password: loginPassword.value,
-                }),
-            });
+            const response = await login(
+                loginUsername.value,
+                loginPassword.value
+            );
 
             if (!response.ok) {
                 throw new Error(
@@ -76,9 +72,7 @@ export function initAuth({ showScreen }) {
 
             const token = await response.json();
 
-            const userResponse = await fetch(`${API_BASE}/me`, {
-                headers: { Authorization: `Bearer ${token.access_token}` },
-            });
+            const userResponse = await getCurrentUser(token.access_token);
 
             if (!userResponse.ok) {
                 throw new Error('Could not verify your account. Please try again.');
@@ -116,9 +110,7 @@ export function initAuth({ showScreen }) {
         authStatus.textContent = 'Checking session…';
 
         try {
-            const response = await fetch(`${API_BASE}/me`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
+            const response = await getCurrentUser(accessToken);
 
             if (response.status === 401) {
                 clearSession();
@@ -141,5 +133,8 @@ export function initAuth({ showScreen }) {
     }
 
     restoreSession();
+    return {
+        getAccessToken: () => authBusy ? null : accessToken,
+    };
 
 }

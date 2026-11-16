@@ -1,89 +1,118 @@
+import { listEncounters } from './api.js';
+
 const itemsPerPage = 8;
+const results = document.getElementById('results');
+const message = document.getElementById('history-message');
+const previousButton = document.getElementById('previous-page');
+const nextButton = document.getElementById('next-page');
+const pageIndicator = document.getElementById('page-indicator');
+const retryButton = document.getElementById('retry-history');
+
 let currentPage = 0;
-const data = JSON.parse(localStorage.getItem('results')) || [];
+let hasNextPage = false;
+let busy = false;
 
-let pendingDeleteIndex = null;
-
-document.getElementById('results').addEventListener('click', event => {
-  const button = event.target.closest('[data-entry-index]');
-  if (button) openDeleteEntryModal(Number(button.dataset.entryIndex));
-});
-renderHistory();
-
-document.getElementById('previous-page').addEventListener('click', () => {
-  if (currentPage > 0) currentPage--;
-  renderHistory();
-});
-
-document.getElementById('next-page').addEventListener('click', () => {
-  if ((currentPage + 1) * itemsPerPage < data.length) currentPage++;
-  renderHistory();
-});
-
-document.getElementById('cancel-delete-entry').addEventListener('click', closeDeleteEntryModal);
-document.getElementById('confirm-delete-entry').addEventListener('click', () => {
-  if (pendingDeleteIndex === null) return;
-  data.splice(pendingDeleteIndex, 1);
-  localStorage.setItem('results', JSON.stringify(data));
-  closeDeleteEntryModal();
-  renderHistory();
-});
-
-document.getElementById('delete-all-btn').addEventListener('click', () => {
-  document.getElementById('delete-all-modal').classList.add('is-active');
-});
-
-function escapeHtml(value) {
-  const text = document.createElement('span');
-  text.textContent = String(value);
-  return text.innerHTML;
+function updateControls() {
+  previousButton.disabled = busy || currentPage === 0;
+  nextButton.disabled = busy || !hasNextPage;
+  retryButton.disabled = busy;
 }
 
-function displayEntries(data, page) {
-  const resultsContainer = document.getElementById('results');
-  const start = page * itemsPerPage;
-  const currentData = [...data].reverse().slice(start, start + itemsPerPage);
+function renderEntries(entries) {
+  results.replaceChildren();
 
-  resultsContainer.innerHTML = currentData.length
-    ? currentData.map((entry, index) => `
-        <div class="result-item">
-          <div class="result-number">Entry #${start + index + 1}</div>
-          <p><strong>Time:</strong> ${escapeHtml(entry.time)}</p>
-          <p><strong>Day:</strong> ${escapeHtml(entry.day)}</p>
-          <p><strong>Server:</strong> ${escapeHtml(entry.server)}</p>
-          <p><strong>Suspected encounters:</strong> ${escapeHtml(entry.suspectedEncounters ?? 'Not recorded')}</p>
-          <button class="button is-danger delete-btn" data-entry-index="${data.length - 1 - start - index}">Delete Entry</button>
-        </div>
-      `).join('')
-    : '<p>No more entries to show.</p>';
+  entries.forEach(entry => {
+    const card = document.createElement('article');
+    card.className = 'result-item';
+
+    const heading = document.createElement('h2');
+    heading.className = 'result-number';
+    heading.textContent = entry.map_name;
+    card.append(heading);
+
+    const details = [
+      ['Server', entry.server_region],
+      ['In-game time', entry.game_time === 'day' ? 'Day' : 'Night'],
+      ['Encounter time', new Date(entry.occurred_at).toLocaleString()],
+      ['Record ID', entry.id],
+    ];
+
+    details.forEach(([label, value]) => {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = `${label}: ${value}`;
+      card.append(paragraph);
+    });
+
+    results.append(card);
+  });
 }
 
-function openDeleteEntryModal(index) {
-  pendingDeleteIndex = index;
-  document.getElementById('delete-entry-modal').classList.add('is-active');
+async function loadPage(page) {
+  if (busy) return;
+
+  results.replaceChildren();
+  pageIndicator.textContent = '';
+  retryButton.hidden = true;
+  hasNextPage = false;
+
+  const accessToken = sessionStorage.getItem('tushonka-token');
+
+  if (!accessToken) {
+    message.textContent = 'Log in from the home page to view your encounters.';
+    updateControls();
+    return;
+  }
+
+  busy = true;
+  message.textContent = 'Loading encounters…';
+  updateControls();
+
+  try {
+    const response = await listEncounters(
+      accessToken,
+      page * itemsPerPage,
+      itemsPerPage + 1
+    );
+
+    if (response.status === 401) {
+      message.textContent = 'Your session expired. Log in again from the home page.';
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error('Could not load encounters. Please retry.');
+    }
+
+    const entries = await response.json();
+
+    currentPage = page;
+    hasNextPage = entries.length > itemsPerPage;
+    renderEntries(entries.slice(0, itemsPerPage));
+    pageIndicator.textContent = `Page ${currentPage + 1}`;
+    message.textContent = entries.length
+      ? ''
+      : 'No encounters on this page.';
+  } catch (error) {
+    message.textContent = error instanceof TypeError
+      ? 'Cannot reach the server. Check your connection and retry.'
+      : error.message;
+    retryButton.hidden = false;
+  } finally {
+    busy = false;
+    updateControls();
+  }
 }
 
-function closeDeleteEntryModal() {
-  pendingDeleteIndex = null;
-  document.getElementById('delete-entry-modal').classList.remove('is-active');
-}
-
-// Delete all data modal functionality
-document.getElementById('confirm-delete-all').addEventListener('click', () => {
-  localStorage.removeItem('results');
-  data.length = 0;
-  document.getElementById('delete-all-modal').classList.remove('is-active');
-  renderHistory();
+previousButton.addEventListener('click', () => {
+  if (currentPage > 0) loadPage(currentPage - 1);
 });
 
-document.getElementById('cancel-delete-all').addEventListener('click', () => {
-  document.getElementById('delete-all-modal').classList.remove('is-active');
+nextButton.addEventListener('click', () => {
+  if (hasNextPage) loadPage(currentPage + 1);
 });
 
-function renderHistory() {
-  currentPage = Math.min(currentPage, Math.max(0, Math.ceil(data.length / itemsPerPage) - 1));
-  displayEntries(data, currentPage);
-  document.getElementById('previous-page').disabled = currentPage === 0;
-  document.getElementById('next-page').disabled = (currentPage + 1) * itemsPerPage >= data.length;
-  document.getElementById('page-indicator').innerText = `Page ${currentPage + 1}`;
-}
+retryButton.addEventListener('click', () => {
+  loadPage(currentPage);
+});
+
+loadPage(0);

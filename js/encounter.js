@@ -1,5 +1,6 @@
-export function initEncounter({ showScreen }) {
+import { createEncounter } from './api.js';
 
+export function initEncounter({ showScreen, getAccessToken }) {
     const startButton = document.getElementById('start-encounter');
     const backButton = document.getElementById('back-home');
     const encounterTimeDisplay = document.getElementById('encounter-time');
@@ -57,10 +58,22 @@ export function initEncounter({ showScreen }) {
     const gameTimeHeading = document.getElementById('game-time-heading');
     const gameTimeButtons = document.querySelectorAll('[data-game-time]');
     const backServer = document.getElementById('back-server');
-
+    const continueGameTime = document.getElementById('continue-game-time');
+    const reviewStep = document.getElementById('review-step');
+    const reviewHeading = document.getElementById('review-heading');
+    const reviewMap = document.getElementById('review-map');
+    const reviewRegion = document.getElementById('review-region');
+    const reviewGameTime = document.getElementById('review-game-time');
+    const reviewOccurredAt = document.getElementById('review-occurred-at');
+    const backGameTime = document.getElementById('back-game-time');
     let selectedGameTime = null;
     let selectedServerArea = null;
     let selectedServerRegion = null;
+    const saveButton = document.getElementById('save-encounter');
+    const saveMessage = document.getElementById('save-message');
+
+    let saveBusy = false;
+    let encounterSaved = false;
 
     function renderButtons(container, choices, onSelect, selected = null) {
         container.replaceChildren();
@@ -144,11 +157,19 @@ export function initEncounter({ showScreen }) {
         mapStep.hidden = step !== 'map';
         serverStep.hidden = step !== 'server';
         gameTimeStep.hidden = step !== 'game-time';
+        reviewStep.hidden = step !== 'review';
     }
 
     startButton.addEventListener('click', () => {
+        if (saveBusy) return;
+
+        encounterSaved = false;
+        saveButton.disabled = false;
+        saveMessage.textContent = '';
+        backGameTime.disabled = false;
         selectedMap = null;
         selectedGameTime = null;
+        continueGameTime.disabled = true;
         continueServer.disabled = true;
 
         gameTimeButtons.forEach(button => {
@@ -215,6 +236,7 @@ export function initEncounter({ showScreen }) {
         button.addEventListener('click', () => {
             const value = button.dataset.gameTime;
             selectedGameTime = selectedGameTime === value ? null : value;
+            continueGameTime.disabled = selectedGameTime === null;
 
             gameTimeButtons.forEach(option => {
                 option.setAttribute(
@@ -228,5 +250,102 @@ export function initEncounter({ showScreen }) {
     backServer.addEventListener('click', () => {
         showStep('server');
         continueServer.focus();
+    });
+    continueGameTime.addEventListener('click', () => {
+        if (
+            selectedMap === null ||
+            selectedServerRegion === null ||
+            selectedGameTime === null ||
+            encounterTime === null
+        ) {
+            return;
+        }
+
+        reviewMap.textContent = selectedMap;
+        reviewRegion.textContent = selectedServerRegion;
+        reviewGameTime.textContent =
+            selectedGameTime === 'day' ? 'Day' : 'Night';
+        reviewOccurredAt.textContent = encounterTime.toLocaleString();
+
+        showStep('review');
+        reviewHeading.focus();
+    });
+
+    backGameTime.addEventListener('click', () => {
+        showStep('game-time');
+        continueGameTime.focus();
+    });
+
+    saveButton.addEventListener('click', async () => {
+        if (saveBusy || encounterSaved) return;
+
+        const accessToken = getAccessToken();
+
+        if (!accessToken) {
+            saveMessage.textContent =
+                'Please log in before starting an encounter, or wait for your session check to finish.';
+            return;
+        }
+
+        if (
+            selectedMap === null ||
+            selectedServerRegion === null ||
+            selectedGameTime === null ||
+            encounterTime === null
+        ) {
+            saveMessage.textContent = 'Complete the encounter details before saving.';
+            return;
+        }
+
+        const encounter = {
+            map_name: selectedMap,
+            server_region: selectedServerRegion,
+            game_time: selectedGameTime,
+            occurred_at: encounterTime.toISOString(),
+        };
+
+        saveBusy = true;
+        saveButton.disabled = true;
+        saveMessage.textContent = 'Saving encounter…';
+
+        const navigationButtons = [
+            backButton,
+            backGameTime,
+            document.getElementById('show-login'),
+            document.getElementById('logout'),
+        ];
+
+        const previousDisabled = navigationButtons.map(button => button.disabled);
+        navigationButtons.forEach(button => {
+            button.disabled = true;
+        });
+
+        try {
+            const response = await createEncounter(accessToken, encounter);
+
+            if (!response.ok) {
+                throw new Error(
+                    response.status === 401
+                        ? 'Your session expired. Log in again before starting another encounter.'
+                        : 'Could not save the encounter. Please try again.'
+                );
+            }
+
+            encounterSaved = true;
+            saveMessage.textContent = 'Encounter saved to your account.';
+        } catch (error) {
+            saveMessage.textContent = error instanceof TypeError
+                ? 'Could not confirm the save. Check your connection and history before retrying.'
+                : error.message;
+        } finally {
+            saveBusy = false;
+            saveButton.disabled = encounterSaved;
+
+            navigationButtons.forEach((button, index) => {
+                button.disabled = previousDisabled[index];
+            });
+
+            backGameTime.disabled = encounterSaved;
+        }
     });
 }

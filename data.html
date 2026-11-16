@@ -8,12 +8,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/history.css">
-  <script src="js/history.js" defer></script>
+  <script type="module" src="js/history.js"></script>
 </head>
 <body>
   <div class="container">
     <h1 class="title">MAYBE THEY WERE JUST BETTER!?</h1>
-
+    <p id="history-message" role="status"></p>
+    <button id="retry-history" class="button" type="button" hidden>
+      Retry
+    </button>
     <div id="results" class="results-grid"></div>
 
     <div class="pagination">
@@ -33,7 +36,7 @@
   <div id="delete-entry-modal" class="modal">
     <div class="modal-background"></div>
     <div class="modal-content">
-      <p>DO YOU WISH TO DELETE THIS ENTRY!?</p>
+      <p>DELETE THIS ENTRY!?</p>
     </div>
     <div class="modal-card-foot">
       <button class="button is-primary" id="confirm-delete-entry">DELETE</button>
@@ -48,7 +51,9 @@
       <p>ARE YOU SURE YOU WANT TO DELETE ALL DATA ENTRIES, BROTHER!?</p>
     </div>
     <div class="modal-card-foot">
-      <button class="button is-primary" id="confirm-delete-all">DELETE ALL ENTRIES</button>
+      <button class="button is-danger is-medium" id="delete-all-btn" disabled>
+        Deletion coming next
+      </button>
       <button class="button is-danger" id="cancel-delete-all">CANCEL</button>
     </div>
   </div>

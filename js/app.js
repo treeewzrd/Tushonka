@@ -14,5 +14,9 @@ function showScreen(screen) {
   loginScreen.hidden = screen !== 'login';
 }
 
-initEncounter({ showScreen });
-initAuth({ showScreen });
+const auth = initAuth({ showScreen });
+
+initEncounter({
+  showScreen,
+  getAccessToken: auth.getAccessToken,
+});
