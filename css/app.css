@@ -201,3 +201,71 @@ button:focus-visible {
 .primary-action:disabled {
   opacity: 0.45;
 }
+
+.account-dropdown {
+  position: relative;
+}
+
+.account-dropdown summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #41463c;
+  border-radius: 8px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.account-dropdown summary::-webkit-details-marker {
+  display: none;
+}
+
+.account-dropdown summary:focus-visible {
+  outline: 2px solid #c1ce98;
+  outline-offset: 5px;
+}
+
+.account-options {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: 280px;
+  max-width: calc(100vw - 40px);
+  padding: 8px;
+  background: #1e211c;
+  border: 1px solid #41463c;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px #0008;
+}
+
+.account-options button,
+.account-options a {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  white-space: normal;
+  text-decoration: none;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+}
+
+.account-options button:disabled {
+  opacity: 0.5;
+}
+
+.account-options a:hover,
+.account-options button:not(:disabled):hover {
+  background: #343b2e;
+}
+
+@media (max-width: 700px) {
+  .account-options {
+    right: auto;
+    left: 0;
+  }
+}

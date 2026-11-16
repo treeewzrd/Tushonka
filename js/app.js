@@ -20,3 +20,8 @@ initEncounter({
   showScreen,
   getAccessToken: auth.getAccessToken,
 });
+
+if (new URLSearchParams(window.location.search).get('log') === '1') {
+  document.getElementById('start-encounter').click();
+  window.history.replaceState(null, '', window.location.pathname);
+}

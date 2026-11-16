@@ -1,4 +1,4 @@
-import { listEncounters } from './api.js';
+import { listEncounters, deleteEncounter } from './api.js';
 
 const itemsPerPage = 8;
 const results = document.getElementById('results');
@@ -17,6 +17,10 @@ function updateControls() {
   nextButton.disabled = busy || !hasNextPage;
   retryButton.disabled = busy;
 }
+
+results.querySelectorAll('button').forEach(button => {
+  button.disabled = busy;
+});
 
 function renderEntries(entries) {
   results.replaceChildren();
@@ -43,8 +47,74 @@ function renderEntries(entries) {
       card.append(paragraph);
     });
 
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'button is-danger';
+    deleteButton.textContent = 'Delete encounter';
+    deleteButton.addEventListener('click', () => {
+      removeEncounter(entry);
+    });
+    card.append(deleteButton);
+
     results.append(card);
   });
+}
+
+async function removeEncounter(entry) {
+  if (busy) return;
+
+  const confirmed = window.confirm(
+    `Delete the ${entry.map_name} encounter from ${new Date(entry.occurred_at).toLocaleString()
+    }? This cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  const accessToken = sessionStorage.getItem('tushonka-token');
+
+  if (!accessToken) {
+    results.replaceChildren();
+    message.textContent = 'Log in from the home page to delete encounters.';
+    return;
+  }
+
+  busy = true;
+  message.textContent = 'Deleting encounter…';
+  retryButton.hidden = true;
+  updateControls();
+
+  let deleted = false;
+
+  try {
+    const response = await deleteEncounter(accessToken, entry.id);
+
+    if (response.status === 401) {
+      results.replaceChildren();
+      throw new Error('Your session expired. Log in again from the home page.');
+    }
+
+    if (response.status === 404) {
+      throw new Error('This encounter is no longer available. Retry to refresh the list.');
+    }
+
+    if (!response.ok) {
+      throw new Error('Could not delete the encounter. Please try again.');
+    }
+
+    deleted = true;
+  } catch (error) {
+    message.textContent = error instanceof TypeError
+      ? 'Could not confirm deletion. Retry to refresh the list before trying again.'
+      : error.message;
+    retryButton.hidden = false;
+  } finally {
+    busy = false;
+    updateControls();
+  }
+
+  if (deleted) {
+    await loadPage(0);
+  }
 }
 
 async function loadPage(page) {

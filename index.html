@@ -11,14 +11,30 @@
   <header class="site-header">
     <a class="brand" href="index.html">Tushonka.</a>
 
-    <nav class="main-nav" aria-label="Main navigation">
-      <button type="button" disabled>Profile</button>
-      <button type="button" disabled>Settings</button>
+    <nav class="main-nav" aria-label="Account navigation">
+  <details id="account-dropdown" class="account-dropdown">
+    <summary id="account-trigger">
+      <span id="account-label">Account</span>
+      <span aria-hidden="true">▾</span>
+    </summary>
+
+    <div class="account-options">
       <button id="show-login" type="button">Log in</button>
+      <button id="create-account" type="button">Create account</button>
+
+      <div id="signed-in-options" hidden>
+        <a href="data.html">Recent Raid Reports</a>
+        <button type="button" disabled>Personal Data — Coming later</button>
+        <button type="button" disabled>Global Data — Coming later</button>
+      </div>
+
+      <button type="button" disabled>Settings — Coming later</button>
       <button id="logout" type="button" hidden>Log out</button>
-      <span id="auth-status" role="status"></span>
-      <button type="button" disabled>Create account</button>
-    </nav>
+    </div>
+  </details>
+
+  <span id="auth-status" role="status"></span>
+</nav>
   </header>
 
   <main>
@@ -45,8 +61,18 @@
             autocomplete="current-password"
             required
           >
-        </p>
-
+      </p>
+        <p id="confirm-password-field" hidden>
+          <label for="confirm-password">Confirm password</label>
+          <input
+          id="confirm-password"
+          name="confirm-password"
+          type="password"
+          autocomplete="new-password"
+          maxlength="128"
+          disabled
+        >
+      </p>
         <p id="login-message" role="status"></p>
 
         <button id="submit-login" type="submit">Log in</button>
@@ -76,7 +102,7 @@
       <article class="overview-card">
         <h2>Your encounters</h2>
         <p>Review the encounters you’ve logged.</p>
-        <a href="data.html">View history →</a>
+        <a href="data.html">View RAID Reports →</a>
       </article>
 
       <article class="overview-card">

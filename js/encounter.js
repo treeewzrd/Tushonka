@@ -1,5 +1,4 @@
 import { createEncounter } from './api.js';
-
 export function initEncounter({ showScreen, getAccessToken }) {
     const startButton = document.getElementById('start-encounter');
     const backButton = document.getElementById('back-home');
@@ -71,9 +70,10 @@ export function initEncounter({ showScreen, getAccessToken }) {
     let selectedServerRegion = null;
     const saveButton = document.getElementById('save-encounter');
     const saveMessage = document.getElementById('save-message');
-
     let saveBusy = false;
     let encounterSaved = false;
+
+    backGameTime.hidden = false;
 
     function renderButtons(container, choices, onSelect, selected = null) {
         container.replaceChildren();
@@ -332,7 +332,12 @@ export function initEncounter({ showScreen, getAccessToken }) {
             }
 
             encounterSaved = true;
-            saveMessage.textContent = 'Encounter saved to your account.';
+
+            const savedEncounter = await response.json();
+
+            window.location.assign(
+                `results.html?saved=${encodeURIComponent(savedEncounter.id)}`
+            );
         } catch (error) {
             saveMessage.textContent = error instanceof TypeError
                 ? 'Could not confirm the save. Check your connection and history before retrying.'

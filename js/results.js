@@ -1,78 +1,174 @@
-function playClickSound() {
-  const clickSound = new Audio('https://www.soundjay.com/button/beep-07.wav'); // URL for the click sound
-  clickSound.play().catch(() => {});
+import { getAllEncounters, deleteEncounter } from './api.js';
+const message = document.getElementById('statistics-message');
+const total = document.getElementById('report-total');
+const retryButton = document.getElementById('retry-statistics');
+const savedReportMessage = document.getElementById('saved-report-message');
+const deleteLastButton = document.getElementById('delete-last-encounter');
+
+const savedIdValue = new URLSearchParams(window.location.search).get('saved');
+let savedEncounterId = Number(savedIdValue);
+
+if (!Number.isSafeInteger(savedEncounterId) || savedEncounterId <= 0) {
+  savedEncounterId = null;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+const charts = [];
+let busy = false;
 
-  const buttons = document.querySelectorAll('.button');
-  buttons.forEach(button => {
-    button.addEventListener('click', playClickSound);
+function countBy(entries, getLabel) {
+  const counts = new Map();
+
+  entries.forEach(entry => {
+    const label = getLabel(entry);
+    counts.set(label, (counts.get(label) ?? 0) + 1);
   });
+}
 
-  const results = JSON.parse(localStorage.getItem('results')) || [];
-
-  const timeOfDayCounts = {
-    '0HRS-600HRS': 0,
-    '700HRS-1200HRS': 0,
-    '1300HRS-1800HRS': 0,
-    '1900HRS-2400HRS': 0
-  };
-  const dayOfWeekCounts = {
-    'Monday': 0,
-    'Tuesday': 0,
-    'Wednesday': 0,
-    'Thursday': 0,
-    'Friday': 0,
-    'Saturday': 0,
-    'Sunday': 0
-  };
-  const serverCounts = {
-    'EAST': 0,
-    'WEST': 0,
-    'CENTRAL': 0,
-    'SOUTH': 0,
-    'SOUTHEAST': 0,
-    'SOUTHWEST': 0
-  };
-
-  results.forEach(report => {
-    if (Object.hasOwn(timeOfDayCounts, report.time)) timeOfDayCounts[report.time]++;
-    if (Object.hasOwn(dayOfWeekCounts, report.day)) dayOfWeekCounts[report.day]++;
-    if (Object.hasOwn(serverCounts, report.server)) serverCounts[report.server]++;
-  });
-
-  function showLeastReported(id, counts) {
-    const labels = Object.keys(counts);
-    const hasReports = Object.values(counts).some(count => count > 0);
-    document.getElementById(id).textContent = hasReports
-      ? labels.reduce((a, b) => counts[a] < counts[b] ? a : b)
-      : 'No reports yet';
-  }
-
-  showLeastReported('best-server', serverCounts);
-  showLeastReported('best-time', timeOfDayCounts);
-  showLeastReported('best-day', dayOfWeekCounts);
-
-  function createPieChart(id, counts, label, colors) {
-    new Chart(document.getElementById(id), {
-      type: 'pie',
-      data: {
-        labels: Object.keys(counts),
-        datasets: [{ label, data: Object.values(counts), backgroundColor: colors }]
+function createChart(id, counts) {
+  const chart = new window.Chart(document.getElementById(id), {
+    type: 'bar',
+    data: {
+      labels: [...counts.keys()],
+      datasets: [{
+        label: 'Raid reports',
+        data: [...counts.values()],
+        backgroundColor: '#b7c18e',
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
       },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'top' },
-          tooltip: { callbacks: { label: context => `${context.label}: ${context.raw} reports` } }
-        }
-      }
-    });
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+        },
+      },
+    },
+  });
+
+  charts.push(chart);
+}
+
+async function loadStatistics() {
+  if (busy) return;
+
+  busy = true;
+  retryButton.hidden = true;
+  total.textContent = '';
+  charts.forEach(chart => chart.destroy());
+  charts.length = 0;
+
+  try {
+    const accessToken = sessionStorage.getItem('tushonka-token');
+
+    if (!accessToken) {
+      message.textContent =
+        'Log in from the home page to view your statistics.';
+      return;
+    }
+
+    if (typeof window.Chart !== 'function') {
+      throw new Error('The chart library did not load. Refresh the page to retry.');
+    }
+
+    message.textContent = 'Loading your raid reports…';
+
+    const entries = await getAllEncounters(accessToken);
+
+    if (entries.length === 0) {
+      message.textContent = 'Save your first raid report to see statistics.';
+      return;
+    }
+    deleteLastButton.hidden = !entries.some(
+      entry => entry.id === savedEncounterId
+    );
+
+    if (!deleteLastButton.hidden) {
+      savedReportMessage.textContent =
+        'Your encounter was saved. You can delete that report below if it was incorrect.';
+    }
+    createChart(
+      'map-chart',
+      countBy(entries, entry => entry.map_name)
+    );
+
+    createChart(
+      'game-time-chart',
+      countBy(entries, entry => entry.game_time === 'day' ? 'Day' : 'Night')
+    );
+
+    createChart(
+      'server-chart',
+      countBy(entries, entry => entry.server_region)
+    );
+
+    total.textContent = `${entries.length} saved raid reports`;
+    message.textContent =
+      'Counts reflect your saved reports. They do not measure cheating rates.';
+  } catch (error) {
+    charts.forEach(chart => chart.destroy());
+    charts.length = 0;
+    message.textContent = error instanceof TypeError
+      ? 'Cannot reach the server. Check your connection and retry.'
+      : error.message;
+    retryButton.hidden = false;
+  } finally {
+    busy = false;
+  }
+}
+deleteLastButton.addEventListener('click', async () => {
+  if (busy || savedEncounterId === null) return;
+
+  if (!window.confirm('Delete the report you just saved? This cannot be undone.')) {
+    return;
   }
 
-  const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#FF9F40', '#4BC0C0', '#9966FF', '#FF66B2'];
-  createPieChart('time-of-day-chart', timeOfDayCounts, 'Entries by Time of Day', colors);
-  createPieChart('day-of-week-chart', dayOfWeekCounts, 'Entries by Day of Week', colors);
-  createPieChart('server-chart', serverCounts, 'Entries by Server', colors);
+  const accessToken = sessionStorage.getItem('tushonka-token');
+
+  if (!accessToken) {
+    savedReportMessage.textContent = 'Log in again to delete this report.';
+    return;
+  }
+
+  busy = true;
+  deleteLastButton.disabled = true;
+  retryButton.disabled = true;
+  savedReportMessage.textContent = 'Deleting report…';
+
+  let deleted = false;
+
+  try {
+    const response = await deleteEncounter(accessToken, savedEncounterId);
+
+    if (!response.ok && response.status !== 404) {
+      throw new Error(
+        response.status === 401
+          ? 'Your session expired. Log in again to delete this report.'
+          : 'Could not delete the report. Please try again.'
+      );
+    }
+
+    savedEncounterId = null;
+    deleteLastButton.hidden = true;
+    window.history.replaceState(null, '', window.location.pathname);
+    savedReportMessage.textContent = response.status === 404
+      ? 'That report is already gone.'
+      : 'Report deleted.';
+    deleted = true;
+  } catch (error) {
+    savedReportMessage.textContent = error instanceof TypeError
+      ? 'Could not confirm deletion. Check Recent Raid Reports before retrying.'
+      : error.message;
+  } finally {
+    busy = false;
+    deleteLastButton.disabled = false;
+    retryButton.disabled = false;
+  }
+
+  if (deleted) await loadStatistics();
 });
+retryButton.addEventListener('click', loadStatistics);
+loadStatistics();

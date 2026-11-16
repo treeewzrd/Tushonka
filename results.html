@@ -3,54 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Results Overview</title>
+  <title>Raid Stats</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="css/results.css">
-  <script src="js/results.js" defer></script>
+  <script type="module" src="js/results.js"></script>
 </head>
 <body>
   <section class="section">
     <div class="container">
 
       <!-- Recommendations Section -->
-      <div class="recommendations">
-        <h2 class="subtitle">RECOMMENDATIONS</h2>
-        <p><strong>Best Server to Choose:</strong> <span id="best-server"></span></p>
-        <p><strong>Recommended Time to Play:</strong> <span id="best-time"></span></p>
-        <p><strong>Best Day of Week:</strong> <span id="best-day"></span></p>
-      </div>
+     <h1 class="title">Your Raid Statistics</h1>
+     <nav class="buttons is-centered" aria-label="Raid navigation">
+        <a href="data.html" class="button">Recent Raid Reports</a>
+        <a href="index.html?log=1" class="button">New Report</a>
+        <a href="index.html" class="button">Home</a>
+      </nav>
 
-      <h1 class="title">Results Overview</h1>
+      <p id="saved-report-message" role="status"></p>
+      <button id="delete-last-encounter" class="button is-danger" type="button" hidden>
+        Delete last entry
+      </button>
+     <p id="statistics-message" role="status"></p>
+     <p id="report-total"></p>
+     <button id="retry-statistics" class="button" type="button" hidden>
+        Retry
+     </button>
 
       <!-- Pie Charts -->
       <div class="chart-section">
-        <h2 class="subtitle">Entries by Time of Day (6hr Blocks)</h2>
+        <h2 class="subtitle">Reports by Map</h2>
         <div class="canvas-container">
-          <canvas id="time-of-day-chart" width="300" height="300"></canvas>
+          <canvas id="map-chart" width="300" height="300"></canvas>
         </div>
       </div>
 
       <div class="chart-section">
-        <h2 class="subtitle">Entries by Day of Week</h2>
+        <h2 class="subtitle">Day/Night Reports</h2>
         <div class="canvas-container">
-          <canvas id="day-of-week-chart" width="300" height="300"></canvas>
+          <canvas id="game-time-chart" width="300" height="300"></canvas>
         </div>
       </div>
 
       <div class="chart-section">
-        <h2 class="subtitle">Entries by Server</h2>
+        <h2 class="subtitle">Reports by Server Region</h2>
         <div class="canvas-container">
           <canvas id="server-chart" width="300" height="300"></canvas>
         </div>
       </div>
-
-      <!-- Button stack -->
-      <div class="buttons is-centered">
-        <a href="data.html" class="button is-black is-large">GO TO DATA ENTRIES</a>
-        <a href="index.html" class="button is-black is-large">BACK TO MAIN PAGE</a>
-      </div>
+      <section aria-labelledby="suggested-maps-heading">
+        <h2 id="suggested-maps-heading" class="subtitle">Suggested Maps</h2>
+        <p>Coming later.</p>
+  </section>
     </div>
   </section>
 </body>
