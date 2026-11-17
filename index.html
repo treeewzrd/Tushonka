@@ -9,7 +9,7 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="index.html">Tushonka.</a>
+    <a id="home-link" class="brand" href="index.html">Tushonka.</a>
 
     <nav class="main-nav" aria-label="Account navigation">
   <details id="account-dropdown" class="account-dropdown">
@@ -38,6 +38,10 @@
   </header>
 
   <main>
+   <p id="preview-notice" role="status" hidden>
+  Preview mode — explore the app and create an encounter.
+  An account is required to save reports and view personal history and statistics.
+   </p>
     <section id="login-screen" class="hero" aria-labelledby="login-heading" hidden>
       <h2 id="login-heading">Log in</h2>
 
@@ -75,11 +79,14 @@
       </p>
         <p id="login-message" role="status"></p>
 
-        <button id="submit-login" type="submit">Log in</button>
-        <button id="cancel-login" type="button">Cancel</button>
+       <button id="submit-login" type="submit">Log in</button>
+      <button id="switch-auth-mode" type="button">Create account</button>
       </form>
+      <button id="preview-app" type="button" disabled>
+        Preview app
+      </button>
     </section>
-    <section class="hero home-section" aria-labelledby="home-title">
+    <section class="hero home-section" aria-labelledby="home-title" hidden>
       <p class="eyebrow">Escape from Tarkov encounter tracker</p>
 
       <h1 id="home-title">Tushonka.</h1>
@@ -98,7 +105,7 @@
       </p>
     </section>
 
-    <section class="overview home-section" aria-label="Explore Tushonka">
+    <section class="overview home-section" aria-label="Explore Tushonka" hidden>
       <article class="overview-card">
         <h2>Your encounters</h2>
         <p>Review the encounters you’ve logged.</p>
@@ -118,13 +125,12 @@
       </article>
     </section>
     <section id="logging-screen" class="hero" hidden>
-      <button id="back-home" type="button">← Back to home</button>
 
       <p class="eyebrow">Log an encounter</p>
       <p id="encounter-time"></p>
 
       <div id="map-step">
-        <h2>Select your map</h2>
+        <h2 id="map-heading" tabindex="-1">Select your map</h2>
         <p>Choose the PvP map where the encounter happened.</p>
 
         <div id="map-options">
@@ -136,9 +142,6 @@
           </button>
       </div>
 
-          <button id="continue-encounter" class="primary-action" type="button" disabled>
-            Continue
-          </button>
       </div>
 
       <div id="server-step" hidden>
@@ -149,15 +152,10 @@
         <div id="server-region-picker" hidden>
           <h3 id="server-area-heading" tabindex="-1"></h3>
         <div id="server-region-options"></div>
-          <button id="back-server-areas" type="button">Back to areas</button>
       </div>
 
         <p id="selected-server-summary" role="status"></p>
-        <button id="continue-server" class="primary-action" type="button" disabled>
-          Continue
-        </button>
 
-        <button id="back-map" type="button">Back to maps</button>
       </div>
 
       <div id="game-time-step" hidden>
@@ -170,10 +168,6 @@
           <button type="button" class="map-option"
           data-game-time="night" aria-pressed="false">Night</button>
         </div>
-        <button id="continue-game-time" class="primary-action" type="button" disabled>
-          Review encounter
-        </button>
-        <button id="back-server" type="button">Back</button>
 
       </div>
 
@@ -195,12 +189,19 @@
 
         <p id="save-message" role="status"></p>
         <button id="save-encounter" class="primary-action" type="button" disabled>
-          Save encounter
+          SUBMIT REPORT
         </button>
-
-        <button id="back-game-time" type="button">Back</button>
       </div>
+        <div class="encounter-navigation">
+          <button id="encounter-back" class="primary-action"
+                  type="button" aria-label="Previous encounter step" hidden>
+            ← Back
+          </button>
 
+          <button id="back-home" class="primary-action" type="button">
+            Cancel entry
+          </button>
+        </div>
     </section>
   </main>
 

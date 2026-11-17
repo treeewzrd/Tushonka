@@ -42,7 +42,7 @@ from schemas import EncounterCreate, EncounterResponse
 
 JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
 
-app = FastAPI(title="BASHTON")
+app = FastAPI(title="Tushonka")
 
 app.add_middleware(
     CORSMiddleware,

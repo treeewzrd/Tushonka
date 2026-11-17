@@ -16,11 +16,11 @@ function updateControls() {
   previousButton.disabled = busy || currentPage === 0;
   nextButton.disabled = busy || !hasNextPage;
   retryButton.disabled = busy;
-}
 
-results.querySelectorAll('button').forEach(button => {
-  button.disabled = busy;
-});
+  results.querySelectorAll('button').forEach(button => {
+    button.disabled = busy;
+  });
+}
 
 function renderEntries(entries) {
   results.replaceChildren();

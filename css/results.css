@@ -44,7 +44,6 @@ canvas {
   height: auto;
 }
 
-.recommendations,
 .chart-section {
   background-color: rgba(0, 0, 0, 0.7);
   padding: 2rem;
@@ -54,25 +53,8 @@ canvas {
   text-align: center;
 }
 
-.recommendations p,
-.recommendations span {
-  color: #32CD32;
-}
-
-.recommendations h2, .recommendations strong {
-  color: #fff;
-}
 
 .buttons.is-centered {
   display: flex;
   flex-direction: column;
-}
-
-.button.is-black {
-  background-color: #000;
-  color: #fff;
-}
-
-.button.is-black:hover {
-  background-color: #333;
 }

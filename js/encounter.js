@@ -1,15 +1,13 @@
 import { createEncounter } from './api.js';
-export function initEncounter({ showScreen, getAccessToken }) {
+export function initEncounter({ showScreen, getAccessToken, requireLogin }) {
     const startButton = document.getElementById('start-encounter');
     const backButton = document.getElementById('back-home');
     const encounterTimeDisplay = document.getElementById('encounter-time');
     const mapButtons = document.querySelectorAll('#map-options .map-option');
-    const continueButton = document.getElementById('continue-encounter');
     const mapStep = document.getElementById('map-step');
     const serverStep = document.getElementById('server-step');
     const serverHeading = document.getElementById('server-heading');
     const selectedMapSummary = document.getElementById('selected-map-summary');
-    const backMapButton = document.getElementById('back-map');
 
     let encounterTime = null;
     let selectedMap = null;
@@ -49,31 +47,35 @@ export function initEncounter({ showScreen, getAccessToken }) {
     const serverRegionPicker = document.getElementById('server-region-picker');
     const serverAreaHeading = document.getElementById('server-area-heading');
     const serverRegionOptions = document.getElementById('server-region-options');
-    const backServerAreas = document.getElementById('back-server-areas');
     const selectedServerSummary = document.getElementById('selected-server-summary');
 
-    const continueServer = document.getElementById('continue-server');
     const gameTimeStep = document.getElementById('game-time-step');
     const gameTimeHeading = document.getElementById('game-time-heading');
     const gameTimeButtons = document.querySelectorAll('[data-game-time]');
-    const backServer = document.getElementById('back-server');
-    const continueGameTime = document.getElementById('continue-game-time');
     const reviewStep = document.getElementById('review-step');
     const reviewHeading = document.getElementById('review-heading');
     const reviewMap = document.getElementById('review-map');
     const reviewRegion = document.getElementById('review-region');
     const reviewGameTime = document.getElementById('review-game-time');
     const reviewOccurredAt = document.getElementById('review-occurred-at');
-    const backGameTime = document.getElementById('back-game-time');
+    const backStepButton = document.getElementById('encounter-back');
+
     let selectedGameTime = null;
     let selectedServerArea = null;
     let selectedServerRegion = null;
+
     const saveButton = document.getElementById('save-encounter');
     const saveMessage = document.getElementById('save-message');
+
     let saveBusy = false;
     let encounterSaved = false;
+    document.addEventListener('click', event => {
+        if (saveBusy && event.target.closest('a')) {
+            event.preventDefault();
+        }
+    }, { capture: true });
 
-    backGameTime.hidden = false;
+    let currentStep = 'map';
 
     function renderButtons(container, choices, onSelect, selected = null) {
         container.replaceChildren();
@@ -89,75 +91,70 @@ export function initEncounter({ showScreen, getAccessToken }) {
         });
     }
 
-    function showServerAreas() {
-        serverAreaOptions.hidden = false;
-        serverRegionPicker.hidden = true;
+    function showStep(step) {
+        currentStep = step;
 
+        mapStep.hidden = step !== 'map';
+        serverStep.hidden = step !== 'area' && step !== 'region';
+        gameTimeStep.hidden = step !== 'game-time';
+        reviewStep.hidden = step !== 'review';
+
+        serverAreaOptions.hidden = step !== 'area';
+        serverRegionPicker.hidden = step !== 'region';
+
+        backStepButton.hidden = step === 'map';
+        backStepButton.disabled = saveBusy || encounterSaved;
+
+        if (step === 'area') {
         renderButtons(
             serverAreaOptions,
             Object.keys(serverRegions),
-            showServerRegions,
+            area => {
+                if (selectedServerArea !== area) {
+                    selectedServerRegion = null;
+                    selectedServerSummary.textContent = '';
+                }
+
+                selectedServerArea = area;
+                showStep('region');
+            },
             selectedServerArea
         );
-    }
-
-    function showServerRegions(area) {
-        if (selectedServerArea !== area) {
-            selectedServerRegion = null;
-            selectedServerSummary.textContent = '';
         }
 
-        continueServer.disabled = selectedServerRegion === null;
-
-        selectedServerArea = area;
-        serverAreaOptions.hidden = true;
-        serverRegionPicker.hidden = false;
-        serverAreaHeading.textContent = area;
+        if (step === 'region') {
+            serverAreaHeading.textContent = selectedServerArea;
 
         renderButtons(
             serverRegionOptions,
-            serverRegions[area],
+            serverRegions[selectedServerArea],
             region => {
                 selectedServerRegion = region;
-                selectedServerSummary.textContent = `Selected region: ${region}`;
-
-                continueServer.disabled = false;
-
-                serverRegionOptions.querySelectorAll('button').forEach(button => {
-                    button.setAttribute(
-                        'aria-pressed',
-                        String(button.textContent === region)
-                    );
-                });
+                selectedServerSummary.textContent =
+                    `Selected region: ${region}`;
+                showStep('game-time');
             },
             selectedServerRegion
         );
-
-        serverAreaHeading.focus();
-    }
-
-    backServerAreas.addEventListener('click', () => {
-        showServerAreas();
-        serverAreaOptions.querySelector('button').focus();
-    });
-
-    showServerAreas();
-
-    function showLogging(isLogging) {
-        showScreen(isLogging ? 'encounter' : 'home');
-
-        if (isLogging) {
-            backButton.focus();
-        } else {
-            startButton.focus();
         }
+
+        if (step === 'review') {
+            reviewMap.textContent = selectedMap;
+            reviewRegion.textContent = selectedServerRegion;
+            reviewGameTime.textContent =
+                selectedGameTime === 'day' ? 'Day' : 'Night';
+            reviewOccurredAt.textContent = encounterTime.toLocaleString();
     }
 
-    function showStep(step) {
-        mapStep.hidden = step !== 'map';
-        serverStep.hidden = step !== 'server';
-        gameTimeStep.hidden = step !== 'game-time';
-        reviewStep.hidden = step !== 'review';
+        const heading = {
+            map: document.getElementById('map-heading'),
+            area: serverHeading,
+            region: serverAreaHeading,
+            'game-time': gameTimeHeading,
+            review: reviewHeading,
+        }[step];
+
+        heading.focus();
     }
 
     startButton.addEventListener('click', () => {
@@ -166,114 +163,82 @@ export function initEncounter({ showScreen, getAccessToken }) {
         encounterSaved = false;
         saveButton.disabled = false;
         saveMessage.textContent = '';
-        backGameTime.disabled = false;
-        selectedMap = null;
-        selectedGameTime = null;
-        continueGameTime.disabled = true;
-        continueServer.disabled = true;
 
-        gameTimeButtons.forEach(button => {
-            button.setAttribute('aria-pressed', 'false');
-        });
+        selectedMap = null;
         selectedServerArea = null;
         selectedServerRegion = null;
-        selectedServerSummary.textContent = '';
-        showServerAreas();
-        continueButton.disabled = true;
+        selectedGameTime = null;
 
-        showStep('map');
+        selectedServerSummary.textContent = '';
+        selectedMapSummary.textContent = '';
 
         mapButtons.forEach(button => {
             button.setAttribute('aria-pressed', 'false');
         });
 
+        gameTimeButtons.forEach(button => {
+            button.setAttribute('aria-pressed', 'false');
+        });
+
         encounterTime = new Date();
-        encounterTimeDisplay.textContent = `Encounter time: ${encounterTime.toLocaleString()}`;
-        showLogging(true);
+        encounterTimeDisplay.textContent =
+            `Encounter time: ${encounterTime.toLocaleString()}`;
+
+        showScreen('encounter');
+        showStep('map');
     });
 
     backButton.addEventListener('click', () => {
-        showLogging(false);
+        if (saveBusy) return;
+
+        showScreen('home');
+        startButton.focus();
+    });
+
+    backStepButton.addEventListener('click', () => {
+        if (saveBusy || encounterSaved) return;
+
+        const previousStep = {
+            area: 'map',
+            region: 'area',
+            'game-time': 'region',
+            review: 'game-time',
+        }[currentStep];
+
+        if (previousStep) showStep(previousStep);
     });
 
     mapButtons.forEach(button => {
         button.addEventListener('click', () => {
-            const wasSelected = button.getAttribute('aria-pressed') === 'true';
+            selectedMap = button.textContent.trim();
 
-            mapButtons.forEach(mapButton => {
-                mapButton.setAttribute('aria-pressed', 'false');
+            mapButtons.forEach(option => {
+                option.setAttribute(
+                    'aria-pressed',
+                    String(option === button)
+                );
             });
 
-            selectedMap = wasSelected ? null : button.textContent.trim();
-            continueButton.disabled = selectedMap === null;
-            button.setAttribute('aria-pressed', String(!wasSelected));
+            selectedMapSummary.textContent =
+                `Selected map: ${selectedMap}`;
+
+            showStep('area');
         });
-    });
-
-    continueButton.addEventListener('click', () => {
-        if (selectedMap === null) {
-            return;
-        }
-
-        selectedMapSummary.textContent = `Selected map: ${selectedMap}`;
-        showStep('server');
-        serverHeading.focus();
-    });
-
-    backMapButton.addEventListener('click', () => {
-        showStep('map');
-        continueButton.focus();
-    });
-
-    continueServer.addEventListener('click', () => {
-        if (selectedServerRegion === null) return;
-
-        showStep('game-time');
-        gameTimeHeading.focus();
     });
 
     gameTimeButtons.forEach(button => {
         button.addEventListener('click', () => {
-            const value = button.dataset.gameTime;
-            selectedGameTime = selectedGameTime === value ? null : value;
-            continueGameTime.disabled = selectedGameTime === null;
+            selectedGameTime = button.dataset.gameTime;
 
             gameTimeButtons.forEach(option => {
                 option.setAttribute(
                     'aria-pressed',
-                    String(option.dataset.gameTime === selectedGameTime)
+                    String(option === button)
                 );
             });
+
+            showStep('review');
         });
-    });
-
-    backServer.addEventListener('click', () => {
-        showStep('server');
-        continueServer.focus();
-    });
-    continueGameTime.addEventListener('click', () => {
-        if (
-            selectedMap === null ||
-            selectedServerRegion === null ||
-            selectedGameTime === null ||
-            encounterTime === null
-        ) {
-            return;
-        }
-
-        reviewMap.textContent = selectedMap;
-        reviewRegion.textContent = selectedServerRegion;
-        reviewGameTime.textContent =
-            selectedGameTime === 'day' ? 'Day' : 'Night';
-        reviewOccurredAt.textContent = encounterTime.toLocaleString();
-
-        showStep('review');
-        reviewHeading.focus();
-    });
-
-    backGameTime.addEventListener('click', () => {
-        showStep('game-time');
-        continueGameTime.focus();
     });
 
     saveButton.addEventListener('click', async () => {
@@ -283,7 +248,8 @@ export function initEncounter({ showScreen, getAccessToken }) {
 
         if (!accessToken) {
             saveMessage.textContent =
-                'Please log in before starting an encounter, or wait for your session check to finish.';
+                'Preview only — log in or create an account to save this report.';
+            document.getElementById('show-login').click();
             return;
         }
 
@@ -310,8 +276,9 @@ export function initEncounter({ showScreen, getAccessToken }) {
 
         const navigationButtons = [
             backButton,
-            backGameTime,
+            backStepButton,
             document.getElementById('show-login'),
+            document.getElementById('create-account'),
             document.getElementById('logout'),
         ];
 
@@ -323,12 +290,13 @@ export function initEncounter({ showScreen, getAccessToken }) {
         try {
             const response = await createEncounter(accessToken, encounter);
 
+            if (response.status === 401) {
+                requireLogin();
+                return;
+            }
+
             if (!response.ok) {
-                throw new Error(
-                    response.status === 401
-                        ? 'Your session expired. Log in again before starting another encounter.'
-                        : 'Could not save the encounter. Please try again.'
-                );
+                throw new Error('Could not save the encounter. Please try again.');
             }
 
             encounterSaved = true;
@@ -350,7 +318,7 @@ export function initEncounter({ showScreen, getAccessToken }) {
                 button.disabled = previousDisabled[index];
             });
 
-            backGameTime.disabled = encounterSaved;
+            backStepButton.disabled = encounterSaved;
         }
     });
 }

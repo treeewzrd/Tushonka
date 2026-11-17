@@ -22,6 +22,7 @@ function countBy(entries, getLabel) {
     const label = getLabel(entry);
     counts.set(label, (counts.get(label) ?? 0) + 1);
   });
+  return counts;
 }
 
 function createChart(id, counts) {

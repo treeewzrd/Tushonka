@@ -1,6 +1,6 @@
 import { login, getCurrentUser, createAccount } from './api.js';
 
-export function initAuth({ showScreen }) {
+export function initAuth({ showScreen, getCurrentScreen }) {
 
     const loginForm = document.getElementById('login-form');
     const loginUsername = document.getElementById('login-username');
@@ -10,7 +10,6 @@ export function initAuth({ showScreen }) {
     const loginMessage = document.getElementById('login-message');
     const submitLogin = document.getElementById('submit-login');
     const showLoginButton = document.getElementById('show-login');
-    const cancelLoginButton = document.getElementById('cancel-login');
     const logoutButton = document.getElementById('logout');
     const authStatus = document.getElementById('auth-status');
 
@@ -20,7 +19,26 @@ export function initAuth({ showScreen }) {
     const signedInOptions = document.getElementById('signed-in-options');
     const createAccountButton = document.getElementById('create-account');
     const loginHeading = document.getElementById('login-heading');
+    const switchAuthMode = document.getElementById('switch-auth-mode');
+
+    switchAuthMode.addEventListener('click', () => {
+        if (!authBusy) showLogin(true, !creatingAccount);
+    });
+
     let creatingAccount = false;
+    let returnScreen = 'home';
+
+    const previewButton = document.getElementById('preview-app');
+    const previewNotice = document.getElementById('preview-notice');
+
+    previewButton.addEventListener('click', () => {
+        if (authBusy || signedIn) return;
+
+        returnScreen = 'home';
+        previewNotice.hidden = false;
+        showScreen('home');
+        document.getElementById('start-encounter').focus();
+    });
 
     document.addEventListener('click', event => {
         if (!accountDropdown.contains(event.target)) {
@@ -44,9 +62,11 @@ export function initAuth({ showScreen }) {
 
     let accessToken = sessionStorage.getItem('tushonka-token');
     let authBusy = false;
+    let signedIn = false;
 
     function updateAuth(user = null) {
-        const signedIn = user !== null;
+        signedIn = user !== null;
+        previewNotice.hidden = true;
 
         showLoginButton.hidden = signedIn;
         createAccountButton.hidden = signedIn;
@@ -64,8 +84,27 @@ export function initAuth({ showScreen }) {
     }
 
     function showLogin(isOpen, create = false) {
+        if (isOpen && getCurrentScreen() !== 'login') {
+            returnScreen = getCurrentScreen();
+        }
+
         creatingAccount = create;
-        showScreen(isOpen ? 'login' : 'home');
+
+        switchAuthMode.textContent = create
+            ? 'Already have an account? Log in'
+            : 'Create account';
+
+        const destination = isOpen
+            ? 'login'
+            : returnScreen === 'encounter'
+                ? 'encounter'
+                : signedIn ? 'home' : 'login';
+
+        showScreen(destination);
+
+        if (!isOpen) {
+            returnScreen = 'home';
+        }
         confirmPasswordField.hidden = !create;
         confirmPassword.disabled = !create;
         confirmPassword.required = create;
@@ -84,6 +123,18 @@ export function initAuth({ showScreen }) {
 
         if (isOpen) {
             loginUsername.focus();
+        } else if (destination === 'encounter') {
+            const reviewHeading = document.getElementById('review-heading');
+            const reviewVisible = !document.getElementById('review-step').hidden;
+
+            if (reviewVisible) {
+                document.getElementById('save-message').textContent =
+                    'You are signed in. Save your report when ready.';
+            }
+
+            (reviewVisible
+                ? reviewHeading
+                : document.getElementById('back-home')).focus();
         } else {
             accountTrigger.focus();
         }
@@ -93,9 +144,6 @@ export function initAuth({ showScreen }) {
     });
     showLoginButton.addEventListener('click', () => {
         if (!authBusy) showLogin(true);
-    });
-    cancelLoginButton.addEventListener('click', () => {
-        showLogin(false);
     });
 
     loginForm.addEventListener('submit', async event => {
@@ -112,7 +160,8 @@ export function initAuth({ showScreen }) {
         let accountCreated = false;
         authBusy = true;
         submitLogin.disabled = true;
-        cancelLoginButton.disabled = true;
+        previewButton.disabled = true;
+        switchAuthMode.disabled = true;
         loginMessage.textContent = creatingAccount ? 'Creating account…' : 'Logging in…';
         try {
             if (creatingAccount) {
@@ -159,9 +208,11 @@ export function initAuth({ showScreen }) {
             sessionStorage.setItem('tushonka-token', token.access_token);
             accessToken = token.access_token;
 
-            showLogin(false);
             updateAuth(user);
-            document.getElementById('start-encounter').focus();
+            showLogin(false);
+            if (getCurrentScreen() === 'home') {
+                document.getElementById('start-encounter').focus();
+            }
         } catch (error) {
             const detail = error instanceof TypeError
                 ? 'Cannot reach the server. Check that the backend is running.'
@@ -180,11 +231,13 @@ export function initAuth({ showScreen }) {
             confirmPassword.value = '';
             authBusy = false;
             submitLogin.disabled = false;
-            cancelLoginButton.disabled = false;
+            previewButton.disabled = false;
+            switchAuthMode.disabled = false;
         }
     });
 
     logoutButton.addEventListener('click', () => {
+        returnScreen = 'home';
         clearSession();
         showLogin(false);
     });
@@ -219,9 +272,24 @@ export function initAuth({ showScreen }) {
         }
     }
 
-    restoreSession();
+    showScreen('login');
+
+    const ready = restoreSession().then(() => {
+        if (signedIn) {
+            showScreen('home');
+        } else {
+            showLogin(true);
+            previewButton.disabled = false;
+        }
+    });
     return {
-        getAccessToken: () => authBusy ? null : accessToken,
+        ready,
+        getAccessToken: () => authBusy || !signedIn ? null : accessToken,
+        requireLogin: () => {
+            clearSession();
+            showLogin(true);
+            authStatus.textContent = 'Session expired. Log in to save your report.';
+        },
     };
 
 }

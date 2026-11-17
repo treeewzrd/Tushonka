@@ -269,3 +269,9 @@ button:focus-visible {
     left: 0;
   }
 }
+
+.encounter-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
