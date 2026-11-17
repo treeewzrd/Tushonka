@@ -6,7 +6,6 @@ const message = document.getElementById('history-message');
 const previousButton = document.getElementById('previous-page');
 const nextButton = document.getElementById('next-page');
 const pageIndicator = document.getElementById('page-indicator');
-const retryButton = document.getElementById('retry-history');
 
 let currentPage = 0;
 let hasNextPage = false;
@@ -15,7 +14,6 @@ let busy = false;
 function updateControls() {
   previousButton.disabled = busy || currentPage === 0;
   nextButton.disabled = busy || !hasNextPage;
-  retryButton.disabled = busy;
 
   results.querySelectorAll('button').forEach(button => {
     button.disabled = busy;
@@ -80,7 +78,6 @@ async function removeEncounter(entry) {
 
   busy = true;
   message.textContent = 'Deleting encounter…';
-  retryButton.hidden = true;
   updateControls();
 
   let deleted = false;
@@ -94,7 +91,7 @@ async function removeEncounter(entry) {
     }
 
     if (response.status === 404) {
-      throw new Error('This encounter is no longer available. Retry to refresh the list.');
+      throw new Error('This encounter is no longer available. Refresh the page to update the list.');
     }
 
     if (!response.ok) {
@@ -104,9 +101,8 @@ async function removeEncounter(entry) {
     deleted = true;
   } catch (error) {
     message.textContent = error instanceof TypeError
-      ? 'Could not confirm deletion. Retry to refresh the list before trying again.'
+      ? 'Could not confirm deletion. Refresh the page before trying again.'
       : error.message;
-    retryButton.hidden = false;
   } finally {
     busy = false;
     updateControls();
@@ -122,7 +118,6 @@ async function loadPage(page) {
 
   results.replaceChildren();
   pageIndicator.textContent = '';
-  retryButton.hidden = true;
   hasNextPage = false;
 
   const accessToken = sessionStorage.getItem('tushonka-token');
@@ -150,7 +145,7 @@ async function loadPage(page) {
     }
 
     if (!response.ok) {
-      throw new Error('Could not load encounters. Please retry.');
+      throw new Error('Could not load encounters. Refresh the page to try again.');
     }
 
     const entries = await response.json();
@@ -164,9 +159,8 @@ async function loadPage(page) {
       : 'No encounters on this page.';
   } catch (error) {
     message.textContent = error instanceof TypeError
-      ? 'Cannot reach the server. Check your connection and retry.'
+      ? 'Cannot reach the server. Check your connection and refresh the page.'
       : error.message;
-    retryButton.hidden = false;
   } finally {
     busy = false;
     updateControls();
@@ -181,8 +175,5 @@ nextButton.addEventListener('click', () => {
   if (hasNextPage) loadPage(currentPage + 1);
 });
 
-retryButton.addEventListener('click', () => {
-  loadPage(currentPage);
-});
 
 loadPage(0);

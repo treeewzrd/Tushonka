@@ -1,18 +1,36 @@
 import { getAllEncounters, deleteEncounter } from './api.js';
 const message = document.getElementById('statistics-message');
 const total = document.getElementById('report-total');
-const retryButton = document.getElementById('retry-statistics');
 const savedReportMessage = document.getElementById('saved-report-message');
 const deleteLastButton = document.getElementById('delete-last-encounter');
 
-const savedIdValue = new URLSearchParams(window.location.search).get('saved');
-let savedEncounterId = Number(savedIdValue);
+const latestEncounter = document.getElementById('latest-encounter');
+const latestDetails = document.getElementById('latest-encounter-details');
+let savedEncounterId = null;
 
-if (!Number.isSafeInteger(savedEncounterId) || savedEncounterId <= 0) {
-  savedEncounterId = null;
+function showLatestEncounter(entry) {
+  savedEncounterId = entry?.id ?? null;
+  latestEncounter.hidden = !entry;
+  deleteLastButton.hidden = !entry;
+  latestDetails.replaceChildren();
+  if (!entry) return;
+
+  const fields = [
+    ['Map', entry.map_name],
+    ['Server region', entry.server_region],
+    ['In-game time', entry.game_time === 'day' ? 'Day' : 'Night'],
+    ['Encounter time', new Date(entry.occurred_at).toLocaleString()],
+  ];
+  fields.forEach(([label, value]) => {
+    const term = document.createElement('dt');
+    const description = document.createElement('dd');
+    term.textContent = label;
+    description.textContent = value;
+    latestDetails.append(term, description);
+  });
 }
 
-const charts = [];
+const summary = document.getElementById('personal-summary');
 let busy = false;
 
 function countBy(entries, getLabel) {
@@ -25,42 +43,49 @@ function countBy(entries, getLabel) {
   return counts;
 }
 
-function createChart(id, counts) {
-  const chart = new window.Chart(document.getElementById(id), {
-    type: 'bar',
-    data: {
-      labels: [...counts.keys()],
-      datasets: [{
-        label: 'Raid reports',
-        data: [...counts.values()],
-        backgroundColor: '#b7c18e',
-      }],
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { precision: 0 },
-        },
-      },
-    },
-  });
+function rankedCounts(entries, getLabel) {
+  return [...countBy(entries, getLabel)].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
 
-  charts.push(chart);
+function renderBreakdown(id, counts) {
+  const list = document.getElementById(id);
+  list.replaceChildren();
+  counts.forEach(([label, count]) => {
+    const row = document.createElement('li');
+    const name = document.createElement('span');
+    const value = document.createElement('span');
+    name.textContent = label;
+    value.textContent = `${count} ${count === 1 ? 'report' : 'reports'}`;
+    row.append(name, value);
+    list.append(row);
+  });
+}
+
+function renderSummary(entries) {
+  const maps = rankedCounts(entries, entry => entry.map_name);
+  const regions = rankedCounts(entries, entry => entry.server_region);
+  const times = countBy(entries, entry => entry.game_time);
+  const topLabel = counts => {
+    if (!counts.length) return 'No reports yet';
+    const leaders = counts.filter(item => item[1] === counts[0][1]);
+    return `${leaders.map(item => item[0]).join(' / ')} (${counts[0][1]})${leaders.length > 1 ? ' — tied' : ''}`;
+  };
+  total.textContent = String(entries.length);
+  document.getElementById('top-map').textContent = topLabel(maps);
+  document.getElementById('top-region').textContent = topLabel(regions);
+  document.getElementById('time-counts').textContent = `${times.get('day') ?? 0} Day / ${times.get('night') ?? 0} Night`;
+  renderBreakdown('map-breakdown', maps);
+  renderBreakdown('region-breakdown', regions);
+  summary.hidden = false;
 }
 
 async function loadStatistics() {
   if (busy) return;
 
   busy = true;
-  retryButton.hidden = true;
   total.textContent = '';
-  charts.forEach(chart => chart.destroy());
-  charts.length = 0;
+  showLatestEncounter(null);
+  summary.hidden = true;
 
   try {
     const accessToken = sessionStorage.getItem('tushonka-token');
@@ -71,51 +96,23 @@ async function loadStatistics() {
       return;
     }
 
-    if (typeof window.Chart !== 'function') {
-      throw new Error('The chart library did not load. Refresh the page to retry.');
-    }
-
     message.textContent = 'Loading your raid reports…';
 
     const entries = await getAllEncounters(accessToken);
 
+    renderSummary(entries);
     if (entries.length === 0) {
       message.textContent = 'Save your first raid report to see statistics.';
       return;
     }
-    deleteLastButton.hidden = !entries.some(
-      entry => entry.id === savedEncounterId
-    );
-
-    if (!deleteLastButton.hidden) {
-      savedReportMessage.textContent =
-        'Your encounter was saved. You can delete that report below if it was incorrect.';
-    }
-    createChart(
-      'map-chart',
-      countBy(entries, entry => entry.map_name)
-    );
-
-    createChart(
-      'game-time-chart',
-      countBy(entries, entry => entry.game_time === 'day' ? 'Day' : 'Night')
-    );
-
-    createChart(
-      'server-chart',
-      countBy(entries, entry => entry.server_region)
-    );
-
-    total.textContent = `${entries.length} saved raid reports`;
-    message.textContent =
-      'Counts reflect your saved reports. They do not measure cheating rates.';
+    // The API orders encounters by timestamp descending, then ID descending.
+    showLatestEncounter(entries[0]);
+    message.textContent = '';
   } catch (error) {
-    charts.forEach(chart => chart.destroy());
-    charts.length = 0;
+    summary.hidden = true;
     message.textContent = error instanceof TypeError
-      ? 'Cannot reach the server. Check your connection and retry.'
+      ? 'Cannot reach the server. Check your connection and refresh the page.'
       : error.message;
-    retryButton.hidden = false;
   } finally {
     busy = false;
   }
@@ -123,7 +120,7 @@ async function loadStatistics() {
 deleteLastButton.addEventListener('click', async () => {
   if (busy || savedEncounterId === null) return;
 
-  if (!window.confirm('Delete the report you just saved? This cannot be undone.')) {
+  if (!window.confirm('Delete the encounter shown above? This cannot be undone.')) {
     return;
   }
 
@@ -136,7 +133,6 @@ deleteLastButton.addEventListener('click', async () => {
 
   busy = true;
   deleteLastButton.disabled = true;
-  retryButton.disabled = true;
   savedReportMessage.textContent = 'Deleting report…';
 
   let deleted = false;
@@ -152,8 +148,7 @@ deleteLastButton.addEventListener('click', async () => {
       );
     }
 
-    savedEncounterId = null;
-    deleteLastButton.hidden = true;
+    showLatestEncounter(null);
     window.history.replaceState(null, '', window.location.pathname);
     savedReportMessage.textContent = response.status === 404
       ? 'That report is already gone.'
@@ -166,10 +161,8 @@ deleteLastButton.addEventListener('click', async () => {
   } finally {
     busy = false;
     deleteLastButton.disabled = false;
-    retryButton.disabled = false;
   }
 
   if (deleted) await loadStatistics();
 });
-retryButton.addEventListener('click', loadStatistics);
 loadStatistics();

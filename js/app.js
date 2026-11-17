@@ -42,6 +42,23 @@ initEncounter({
   requireLogin: auth.requireLogin,
 });
 
+document.querySelectorAll('[data-account-screen]').forEach(link => {
+  link.addEventListener('click', async event => {
+    if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    await auth.ready;
+    document.getElementById('account-dropdown').open = false;
+    document.getElementById('preview-notice').hidden = Boolean(auth.getAccessToken());
+
+    if (link.dataset.accountScreen === 'encounter') {
+      document.getElementById('start-encounter').click();
+    } else {
+      showScreen('home');
+      document.getElementById('start-encounter').focus();
+    }
+  });
+});
+
 auth.ready.then(() => {
   const params = new URLSearchParams(window.location.search);
 

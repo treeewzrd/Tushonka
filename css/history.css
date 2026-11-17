@@ -39,6 +39,8 @@ body {
 }
 
 .result-item {
+  min-width: 0;
+  overflow-wrap: anywhere;
   background-color: rgba(0, 0, 0, 0.8);
   border-radius: 10px;
   padding: 1rem;
@@ -120,4 +122,33 @@ body {
   background-color: #000;
   color: #fff;
   font-family: 'Press Start 2P', sans-serif;
+}
+
+/* Crosshair navigation cursor; preserve editing and disabled states. */
+body,
+a,
+button:not(:disabled),
+summary {
+  cursor: crosshair;
+}
+input,
+textarea {
+  cursor: text;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+.result-item .button.is-danger {
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: 100%;
+  height: auto;
+  min-height: 40px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  font-size: 10px;
+  line-height: 1.6;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

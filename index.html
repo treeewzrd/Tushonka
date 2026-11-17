@@ -4,12 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tushonka</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css">
 <script type="module" src="js/app.js"></script>
 </head>
 <body>
   <header class="site-header">
-    <a id="home-link" class="brand" href="index.html">Tushonka.</a>
+    <p id="preview-notice" role="status" hidden>
+      <strong>Preview mode</strong> — Log in or create an account to save reports.
+    </p>
+  <a id="home-link" class="brand" href="index.html" aria-label="Tushonka home">
+  <span lang="ru">Тushonка.</span>
+  <img src="images/can of tushonka big.webp" alt="" width="56" height="56">
+</a>
 
     <nav class="main-nav" aria-label="Account navigation">
   <details id="account-dropdown" class="account-dropdown">
@@ -19,37 +26,37 @@
     </summary>
 
     <div class="account-options">
-      <button id="show-login" type="button">Log in</button>
-      <button id="create-account" type="button">Create account</button>
-
-      <div id="signed-in-options" hidden>
-        <a href="data.html">Recent Raid Reports</a>
-        <button type="button" disabled>Personal Data — Coming later</button>
-        <button type="button" disabled>Global Data — Coming later</button>
+      <div class="account-navigation">
+        <a href="index.html" data-account-screen="home">Dashboard</a>
+        <a href="index.html?log=1" data-account-screen="encounter">Log Encounter</a>
+        <a href="data.html">Recent Raids</a>
+        <a href="results.html">Your Statistics</a>
       </div>
-
-      <button type="button" disabled>Settings — Coming later</button>
-      <button id="logout" type="button" hidden>Log out</button>
+      <div class="account-actions">
+        <button id="show-login" type="button">Log in</button>
+        <button id="create-account" type="button">Create account</button>
+        <div id="signed-in-options" hidden>
+          <button id="logout" type="button" hidden>Log out</button>
+        </div>
+      </div>
     </div>
   </details>
 
-  <span id="auth-status" role="status"></span>
 </nav>
+    <span id="auth-status" role="status" aria-live="polite"></span>
   </header>
 
   <main>
-   <p id="preview-notice" role="status" hidden>
-  Preview mode — explore the app and create an encounter.
-  An account is required to save reports and view personal history and statistics.
-   </p>
+
     <section id="login-screen" class="hero" aria-labelledby="login-heading" hidden>
-      <h2 id="login-heading">Log in</h2>
+      <h2 id="login-heading" class="visually-hidden">Log in</h2>
 
       <form id="login-form">
         <p>
-          <label for="login-username">Username</label>
+          <label for="login-username" class="visually-hidden">Username</label>
           <input
             id="login-username"
+            placeholder="Username"
             name="username"
             autocomplete="username"
             required
@@ -57,9 +64,10 @@
         </p>
 
         <p>
-          <label for="login-password">Password</label>
+          <label for="login-password" class="visually-hidden">Password</label>
           <input
             id="login-password"
+            placeholder="Password"
             name="password"
             type="password"
             autocomplete="current-password"
@@ -67,10 +75,11 @@
           >
       </p>
         <p id="confirm-password-field" hidden>
-          <label for="confirm-password">Confirm password</label>
+          <label for="confirm-password" class="visually-hidden">Confirm password</label>
           <input
           id="confirm-password"
-          name="confirm-password"
+          placeholder="Confirm password"
+            name="confirm-password"
           type="password"
           autocomplete="new-password"
           maxlength="128"
@@ -86,24 +95,20 @@
         Preview app
       </button>
     </section>
+    <div class="dashboard-feature-row">
     <section class="hero home-section" aria-labelledby="home-title" hidden>
-      <p class="eyebrow">Escape from Tarkov encounter tracker</p>
-
-      <h1 id="home-title">Tushonka.</h1>
-
-      <p class="tagline">
-        A personal tracker for logging encounters with cheaters
-        in Escape from Tarkov.
-      </p>
-
-      <button class="primary-action" id="start-encounter" type="button">
-        CHEATER SPOTTED
-        </button>
-
-      <p class="supporting-text">
-        Keep a record. Find patterns. Plan your next raid.
-      </p>
+      <h1 id="home-title" class="dashboard-title">
+        <span lang="ru">Тushonка.</span>
+        <img src="images/can of tushonka big.webp" alt="" width="64" height="64">
+      </h1>
+      <p class="tagline">Keep a record. Find patterns. Plan your next raid.</p>
     </section>
+    <div class="dashboard-report-action home-section" hidden>
+      <button id="start-encounter" class="report-image-button" type="button" aria-label="Report encounter">
+        <img src="images/report-encounter-button.png" alt="" width="1122" height="1402">
+      </button>
+    </div>
+    </div>
 
     <section class="overview home-section" aria-label="Explore Tushonka" hidden>
       <article class="overview-card">
@@ -133,15 +138,19 @@
         <h2 id="map-heading" tabindex="-1">Select your map</h2>
         <p>Choose the PvP map where the encounter happened.</p>
 
-        <div id="map-options">
-          <button type="button" class="map-option" aria-pressed="false">
-            Customs
-          </button>
-          <button type="button" class="map-option" aria-pressed="false">
-            Woods
-          </button>
-      </div>
-
+                <div id="map-options">
+          <button type="button" class="map-option" aria-pressed="false">Customs</button>
+          <button type="button" class="map-option" aria-pressed="false">Factory</button>
+          <button type="button" class="map-option" aria-pressed="false">Ground Zero</button>
+          <button type="button" class="map-option" aria-pressed="false">Interchange</button>
+          <button type="button" class="map-option" aria-pressed="false">Lighthouse</button>
+          <button type="button" class="map-option" aria-pressed="false">Reserve</button>
+          <button type="button" class="map-option" aria-pressed="false">Shoreline</button>
+          <button type="button" class="map-option" aria-pressed="false">Streets of Tarkov</button>
+          <button type="button" class="map-option" aria-pressed="false">The Lab</button>
+          <button type="button" class="map-option" aria-pressed="false">The Labyrinth</button>
+          <button type="button" class="map-option" aria-pressed="false">Woods</button>
+        </div>
       </div>
 
       <div id="server-step" hidden>
@@ -206,7 +215,11 @@
   </main>
 
   <footer class="site-footer">
-    <p>Built by treeewzrd.</p>
+    <p class="creator-credit">
+      Created by: treeewzrd
+      <img src="images/blackmagemagic.gif" alt="" width="32" height="32">
+    </p>
+    <p class="release-note">More features coming.</p>
   </footer>
 </body>
 </html>
