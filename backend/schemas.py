@@ -1,6 +1,15 @@
 from typing import Literal
 
-from pydantic import AwareDatetime, BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field, field_validator
+
+
+def normalize_username(value: str) -> str:
+    username = value.strip()
+
+    if not username:
+        raise ValueError("Username cannot be empty or whitespace")
+
+    return username
 
 
 # schema for incoming user creation requests
@@ -8,6 +17,10 @@ class UserCreate(BaseModel):
     username: str = Field(min_length=1, max_length=50)
     password: str = Field(min_length=12, max_length=128)
 
+    @field_validator("username", mode="before")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        return normalize_username(value)
 
 # Schema for user data returned by the API
 class UserResponse(BaseModel):
@@ -20,11 +33,23 @@ class UserResponse(BaseModel):
 class UserUpdate(BaseModel):
     username: str | None = Field(default=None, min_length=1, max_length=50)
 
+    @field_validator("username", mode="before")
+    @classmethod
+    def validate_username(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return normalize_username(value)
+
 
 #
 class UserLogin(BaseModel):
-    username: str
+    username: str = Field(min_length=1, max_length=50)
     password: str
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        return normalize_username(value)
 
 
 class TokenResponse(BaseModel):
@@ -34,6 +59,11 @@ class TokenResponse(BaseModel):
 
 class UserRename(BaseModel):
     username: str = Field(min_length=1, max_length=50)
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        return normalize_username(value)
 
 
 class EncounterCreate(BaseModel):

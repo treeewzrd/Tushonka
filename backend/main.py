@@ -7,9 +7,14 @@ import jwt
 
 # FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Depends, FastAPI, HTTPException, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+# Rate limiting
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 # SQLAlchemy
 # Handles database integrity violations, including unique constraint violations
@@ -44,6 +49,16 @@ JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
 
 app = FastAPI(title="Tushonka")
 
+# Limit repeated requests from the same client IP.
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return _rate_limit_exceeded_handler(request, exc)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -51,7 +66,7 @@ app.add_middleware(
         "http://localhost:5500",
         "https://tushonka-web.onrender.com",
     ],
-    allow_methods=["GET", "POST", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
 
@@ -77,7 +92,12 @@ def health_check():
 
 # Validate incoming user data, create the database record, and return it
 @app.post("/users", response_model=UserResponse, status_code=201)
-def post_users(user: UserCreate, db: Annotated[Session, Depends(get_db)]):
+@limiter.limit("3/minute")
+def post_users(
+    request: Request,
+    user: UserCreate,
+    db: Annotated[Session, Depends(get_db)],
+):
     db_user = User(username=user.username, hashed_password=hash_password(user.password))
     db.add(db_user)
 
@@ -214,7 +234,12 @@ def patch_user(
 
 
 @app.post("/login", response_model=TokenResponse)
-def login(credentials: UserLogin, db: Annotated[Session, Depends(get_db)]):
+@limiter.limit("5/minute")
+def login(
+    request: Request,
+    credentials: UserLogin,
+    db: Annotated[Session, Depends(get_db)],
+):
     user = db.query(User).filter(User.username == credentials.username).first()
 
     if user is None or not verify_password(credentials.password, user.hashed_password):
