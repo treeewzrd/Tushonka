@@ -88,11 +88,60 @@ body {
   color: #00d1b2;
 }
 
+
 .buttons.is-centered {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: max-content;
+  justify-content: center;
+  justify-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.buttons.is-centered .button {
+  margin: 0;
+}
+
+
+.history-brand {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  height: 89px;
+  color: #fff;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 49px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateX(-18px);
+}
+
+.history-brand img {
+  position: absolute;
+  left: calc(100% + 6px);
+  width: 89px;
+  height: 89px;
+  object-fit: contain;
+  transform: rotate(20deg);
+}
+
+.history-brand:hover {
+  color: #fff;
+}
+
+.history-brand:hover img {
+  filter: drop-shadow(0 0 8px #aa2525);
+}
+
+.history-brand:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
 }
 
 /* Modal Styles */
