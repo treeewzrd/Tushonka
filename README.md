@@ -1,6 +1,6 @@
 # Tushonka
 
-[![Backend Tests](https://github.com/treeewzrd/Tushonka/actions/workflows/tests.yml/badge.svg?branch=tushonka-rebuild)](https://github.com/treeewzrd/Tushonka/actions/workflows/tests.yml)
+[![Backend Tests](https://github.com/treeewzrd/Tushonka/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/treeewzrd/Tushonka/actions/workflows/tests.yml)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
@@ -8,7 +8,7 @@
 
 A personal encounter logger for **Escape from Tarkov**. Record suspected encounters, save them to your account, and review patterns across maps, server regions, and in-game Day/Night.
 
-**Status:**  The core web-app, account, and reporting features are built. I accomplished what i set out to do. Future developments will be done after I work on some other projects and have time to think about future iplementation.
+**Status:**  The core web-app, account, and reporting features are built. I accomplished what I set out to do. Future developments will be done after I work on some other projects and have time to think about future implementation.
 
 [Live application](https://tushonka-web.onrender.com) · [API documentation](https://tushonka-api.onrender.com/docs) · [Backend test workflow](https://github.com/treeewzrd/Tushonka/actions/workflows/tests.yml)
 
@@ -20,7 +20,7 @@ A personal encounter logger for **Escape from Tarkov**. Record suspected encount
 
 I originally built Tushonka while playing a considerable amount of Tarkov. I wanted a personal record of suspected encounters to help me review my own experience across maps, servers, and times.
 
-This was one of my earliest projects. After building **BASHTON**, I returned to apply what I had learned about API design, authentication, databases, and deployment. I adapted my existing backend foundation into an independent Tushonka API and replaced browser-local reports with account-owned PostgreSQL records.
+This was one of my earliest projects. After building **[BASHTON](https://github.com/treeewzrd/BASHTON)**, I returned to apply what I had learned about API design, authentication, databases, and deployment. I adapted my existing backend foundation into an independent Tushonka API and replaced browser-local reports with account-owned PostgreSQL records.
 
 The rebuild also separated page styling, API requests, authentication, encounter state, and navigation into clearer responsibilities. The result is a complete reporting workflow with persistent personal history. It was a real mess <|:-]
 
@@ -108,7 +108,7 @@ Browser: HTML, CSS, JavaScript modules
 
 The API derives encounter ownership from the authenticated account. Listing is filtered by owner, and deletion requires a matching record ID and owner.
 
-Access tokens expire after 15 minutes and are stored in browser `sessionStorage`. Encounter timestamps are stored with timezone information and displayed using the browser’s local formatting. This will change is development continues to support more users or phone/app development begins.
+Access tokens expire after 15 minutes and are stored in browser `sessionStorage`. Encounter timestamps are stored with timezone information and displayed using the browser’s local formatting. This will change if development continues to support more users or phone/app development begins.
 
 History requests a small page of records. Statistics fetch all account records in batches of 100 and calculate summaries in the browser. Current statistics use counters and ranked lists.
 
@@ -118,7 +118,7 @@ The screenshot dataset includes synthetic encounter records generated for demons
 
 Personal summaries become more useful to explore as reports accumulate—for example, around 30–50 reports—but this is a practical illustration, not a validated statistical threshold.
 
-Reports represent **suspected encounters**, not confirmed cheating. All encounters submitted by users is pure speculation and suggestions/graphs reflect that.
+Reports represent **suspected encounters**, not confirmed cheating. All encounters submitted by users are speculative, and personal summaries reflect those reports.
 
 ## Run locally
 
