@@ -1,0 +1,203 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-image: url('../images/sthurman.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  color: #f1f1f1;
+  font-family: 'Press Start 2P', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.container {
+  text-align: center;
+  max-width: 1000px;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 10px;
+}
+
+.title {
+  color: #fff;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.result-item {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 10px;
+  padding: 1rem;
+  color: #fff;
+  font-family: 'DotGothic16', sans-serif;
+  font-size: 1rem;
+  text-align: left;
+}
+
+.result-number {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.button {
+  margin: 1rem 0;
+  border-radius: 8px;
+  background-color: #000;
+  color: #fff;
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+.button:hover {
+  background-color: #333;
+}
+
+.button.is-danger {
+  background-color: #e74c3c;
+}
+
+.button.is-danger:hover {
+  background-color: #c0392b;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.pagination .current-page {
+  font-weight: bold;
+  color: #00d1b2;
+}
+
+
+.buttons.is-centered {
+  display: grid;
+  grid-template-columns: max-content;
+  justify-content: center;
+  justify-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.buttons.is-centered .button {
+  margin: 0;
+}
+
+
+.history-brand {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 89px;
+  color: #fff;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 49px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateX(-18px);
+}
+
+.history-brand img {
+  position: absolute;
+  left: calc(100% + 6px);
+  width: 89px;
+  height: 89px;
+  object-fit: contain;
+  transform: rotate(20deg);
+}
+
+.history-brand:hover {
+  color: #fff;
+}
+
+.history-brand:hover img {
+  filter: drop-shadow(0 0 8px #aa2525);
+}
+
+.history-brand:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
+
+/* Modal Styles */
+.modal-background {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+  background-color: #fff;
+  color: black;
+  padding: 2rem;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.modal-card-foot {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.modal .button {
+  display: block;
+  margin: 0.5rem auto;
+  border-radius: 0;
+  border: 2px solid #333;
+  background-color: #000;
+  color: #fff;
+  font-family: 'Press Start 2P', sans-serif;
+}
+
+/* Crosshair navigation cursor; preserve editing and disabled states. */
+body,
+a,
+button:not(:disabled),
+summary {
+  cursor: crosshair;
+}
+input,
+textarea {
+  cursor: text;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+.result-item .button.is-danger {
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: 100%;
+  height: auto;
+  min-height: 40px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  font-size: 10px;
+  line-height: 1.6;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

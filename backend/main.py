@@ -1,0 +1,316 @@
+import os
+
+# Standard library
+from typing import Annotated
+
+import jwt
+
+# FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
+
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+# Rate limiting
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+# SQLAlchemy
+# Handles database integrity violations, including unique constraint violations
+from sqlalchemy.exc import IntegrityError
+
+# SQLAlchemy database session type
+from sqlalchemy.orm import Session
+
+# Project modules
+# Database session factory
+from database import SessionLocal
+
+# SQLAlchemy models
+from models import Encounter, User
+
+# Pydantic schemas for validating and returning user data
+from schemas import (
+    TokenResponse,
+    UserCreate,
+    UserLogin,
+    UserResponse,
+    UserUpdate,
+    UserRename,
+)
+
+# import password hashing function for secure password storage
+from security import create_access_token, hash_password, verify_password
+
+from schemas import EncounterCreate, EncounterResponse
+
+JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
+
+app = FastAPI(title="Tushonka")
+
+# Limit repeated requests from the same client IP.
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return _rate_limit_exceeded_handler(request, exc)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+        "https://tushonka-web.onrender.com",
+    ],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+)
+
+
+bearer_scheme = HTTPBearer(auto_error=False)
+
+
+# provides database session for each request
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        # close session after request
+        db.close()
+
+
+# health check endpoint: confirms api running
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+
+# Validate incoming user data, create the database record, and return it
+@app.post("/users", response_model=UserResponse, status_code=201)
+@limiter.limit("3/minute")
+def post_users(
+    request: Request,
+    user: UserCreate,
+    db: Annotated[Session, Depends(get_db)],
+):
+    db_user = User(username=user.username, hashed_password=hash_password(user.password))
+    db.add(db_user)
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Username already exists")
+
+    return db_user
+
+
+# Verify the signature, expiration, and required claims using HS256.
+def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    unauthorized = HTTPException(
+        status_code=401,
+        detail="Invalid or expired access token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if credentials is None:
+        raise unauthorized
+
+    try:
+        claims = jwt.decode(
+            credentials.credentials,
+            JWT_SECRET_KEY,
+            algorithms=["HS256"],
+            options={"require": ["sub", "exp"]},
+        )
+        user_id = int(claims["sub"])
+    except (jwt.InvalidTokenError, ValueError):
+        raise unauthorized from None
+    # Look up the account on every request so deleted users cannot authenticate.
+    user = db.get(User, user_id)
+    if user is None:
+        raise unauthorized
+    return user
+
+
+# Require login and ownership before deleting account
+@app.delete("/users/{user_id}", status_code=204)
+def delete_user(
+    user_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot delete another user")
+
+    db.delete(current_user)
+    db.commit()
+    return Response(status_code=204)
+
+
+# Require login and return only the signed-in account.
+@app.get("/users", response_model=list[UserResponse])
+def get_users(
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return [current_user]
+
+
+# Require login and ownership before reading an account.
+@app.get("/users/{user_id}", response_model=UserResponse)
+def get_user(
+    user_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot view another user")
+    return current_user
+
+
+# Update an existing user;s username by ID
+@app.put("/users/{user_id}", response_model=UserResponse)
+def update_user(
+    user_id: int,
+    user: UserRename,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot edit another user")
+
+    current_user.username = user.username
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Username already exists",
+        ) from None
+
+    return current_user
+
+
+# Partially update an existing user's information by ID
+@app.patch("/users/{user_id}", response_model=UserResponse)
+def patch_user(
+    user_id: int,
+    user: UserUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot edit another user")
+
+    db_user = current_user
+    # Update only explicitly supplied fields; reject empty updates and explicit nulls below.
+    update_data = user.model_dump(exclude_unset=True)
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields provided")
+    if any(value is None for value in update_data.values()):
+        raise HTTPException(status_code=422, detail="Fields cannot be null")
+
+    for key, value in update_data.items():
+        setattr(db_user, key, value)
+
+    try:
+        db.commit()
+    except IntegrityError:
+        # Reset the failed transaction before returning the username conflict.
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Username already exists",
+        ) from None
+
+    return db_user
+
+
+@app.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
+def login(
+    request: Request,
+    credentials: UserLogin,
+    db: Annotated[Session, Depends(get_db)],
+):
+    user = db.query(User).filter(User.username == credentials.username).first()
+
+    if user is None or not verify_password(credentials.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    token = create_access_token(user.id, JWT_SECRET_KEY)
+    return TokenResponse(access_token=token, token_type="bearer")
+
+
+@app.get("/me", response_model=UserResponse)
+def get_me(current_user: Annotated[User, Depends(get_current_user)]):
+    return current_user
+
+
+@app.post("/encounters", response_model=EncounterResponse, status_code=201)
+def create_encounter(
+    encounter: EncounterCreate,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    record = Encounter(
+        user_id=current_user.id,
+        **encounter.model_dump(),
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+@app.get("/encounters", response_model=list[EncounterResponse])
+def list_encounters(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    offset: int = 0,
+    limit: int = 50,
+):
+    if offset < 0 or limit < 1 or limit > 100:
+        raise HTTPException(
+            status_code=422,
+            detail="Offset must be nonnegative and limit must be betweeen 1 and 100",
+        )
+
+    return (
+        db.query(Encounter)
+        .filter(Encounter.user_id == current_user.id)
+        .order_by(Encounter.occurred_at.desc(), Encounter.id.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+
+@app.delete("/encounters/{encounter_id}", status_code=204)
+def delete_encounter(
+    encounter_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    record = (
+        db.query(Encounter)
+        .filter(
+            Encounter.id == encounter_id,
+            Encounter.user_id == current_user.id,
+        )
+        .first()
+    )
+
+    if record is None:
+        raise HTTPException(status_code=404, detail="Encounter not found")
+
+    db.delete(record)
+    db.commit()
+    return Response(status_code=204)
