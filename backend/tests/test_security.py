@@ -1,6 +1,7 @@
 import os
 
-os.environ["JWT_SECRET_KEY"] = "test-only-secret"
+# Use test settings so we don't connect to the actual database.
+os.environ["JWT_SECRET_KEY"] = "tushonka-local-testing-key-2026-only"
 os.environ["DATABASE_URL"] = "sqlite://"
 
 from fastapi.testclient import TestClient
@@ -12,6 +13,7 @@ from database import Base
 from main import app, get_db, limiter
 from database import engine as app_engine
 
+# Make sure the tests are using SQLite.
 assert app_engine.dialect.name == "sqlite", (
     "Security tests must not initialize against PostgreSQL"
 )
@@ -25,7 +27,6 @@ engine = create_engine(
 
 TestingSession = sessionmaker(bind=engine, autoflush=False)
 
-
 def override_get_db():
     with TestingSession() as db:
         yield db
@@ -33,7 +34,7 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
-
+# Check that repeated failed logins get blocked.
 def test_login_rate_limit():
     Base.metadata.create_all(bind=engine)
     limiter.reset()
@@ -63,6 +64,7 @@ def test_login_rate_limit():
         limiter.reset()
 
 
+# Check that too many registrations get blocked.
 def test_registration_rate_limit():
     Base.metadata.create_all(bind=engine)
     limiter.reset()
