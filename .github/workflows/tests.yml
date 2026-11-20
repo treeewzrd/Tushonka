@@ -1,6 +1,9 @@
 
 name: Backend Tests
 
+permissions:
+  contents: read
+
 on:
   push:
   pull_request:
