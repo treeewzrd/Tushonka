@@ -1,6 +1,6 @@
 # Tushonka
 
-[![Backend Tests](https://github.com/treeewzrd/Tushonka/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/treeewzrd/Tushonka/actions/workflows/tests.yml)
+[![Backend Tests](https://github.com/treeewzrd/Tushonka/actions/workflows/tests.yml/badge.svg?branch=tushonka-rebuild)](https://github.com/treeewzrd/Tushonka/actions/workflows/tests.yml)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
@@ -8,7 +8,7 @@
 
 A personal encounter logger for **Escape from Tarkov**. Record suspected encounters, save them to your account, and review patterns across maps, server regions, and in-game Day/Night.
 
-**Status:**  The core web-app, account, and reporting features are built. I accomplished what I set out to do. Future developments will be done after I work on some other projects and have time to think about future implementation.
+**Status:**  The core web-app, account, and reporting features are built. I accomplished what i set out to do. Future developments will be done after I work on some other projects and have time to think about future iplementation.
 
 [Live application](https://tushonka-web.onrender.com) · [API documentation](https://tushonka-api.onrender.com/docs) · [Backend test workflow](https://github.com/treeewzrd/Tushonka/actions/workflows/tests.yml)
 
@@ -18,11 +18,13 @@ A personal encounter logger for **Escape from Tarkov**. Record suspected encount
 
 ## Why I built it and revisited it
 
-I originally built Tushonka while playing a considerable amount of Tarkov. I wanted a personal record of suspected encounters to help me review my own experience across maps, servers, and times.
+I originally built Tushonka while playing a considerable amount of Tarkov. I wanted a personal record of suspected encounters to help me review patterns across maps, servers, and times. The documentation is intentionally detailed because I'm also using this project to practice technical documentation.
 
-This was one of my earliest projects. After building **[BASHTON](https://github.com/treeewzrd/BASHTON)**, I returned to apply what I had learned about API design, authentication, databases, and deployment. I adapted my existing backend foundation into an independent Tushonka API and replaced browser-local reports with account-owned PostgreSQL records.
+This was an old Project with no backend that i didnt ever get where i wanted it. After building an API **BASHTON**, I returned to apply what I had learned about API design, authentication, databases, and deployment. I adapted my existing backend foundation into an independent Tushonka API and replaced browser-local reports with account-owned PostgreSQL records.
 
-The rebuild also separated page styling, API requests, authentication, encounter state, and navigation into clearer responsibilities. The result is a complete reporting workflow with persistent personal history. It was a real mess <|:-]
+The rebuild also separated page styling, API requests, authentication, encounter state, and navigation into clearer responsibilities. The result is a complete reporting workflow with persistent personal history.
+
+I plan to revisit TUSHONKA as I develop new skills and ideas, possibly adapting it into a mobile app or expanding it to other games. For now, I'm shifting my focus toward application security and backend development. I've enjoyed the design side of things, but styling can be time-consuming, and I'd like to explore other aspects of software development. <|:-]
 
 ## Features
 
@@ -108,7 +110,7 @@ Browser: HTML, CSS, JavaScript modules
 
 The API derives encounter ownership from the authenticated account. Listing is filtered by owner, and deletion requires a matching record ID and owner.
 
-Access tokens expire after 15 minutes and are stored in browser `sessionStorage`. Encounter timestamps are stored with timezone information and displayed using the browser’s local formatting. This will change if development continues to support more users or phone/app development begins.
+Access tokens expire after 15 minutes and are stored in browser `sessionStorage`. Encounter timestamps are stored with timezone information and displayed using the browser’s local formatting. This will change is development continues to support more users or phone/app development begins.
 
 History requests a small page of records. Statistics fetch all account records in batches of 100 and calculate summaries in the browser. Current statistics use counters and ranked lists.
 
@@ -116,9 +118,11 @@ History requests a small page of records. Statistics fetch all account records i
 
 The screenshot dataset includes synthetic encounter records generated for demonstration. These populate history and summaries so the interface can be shown with more than a few entries. They are not evidence of real cheating or a load test. The temporary seed script is not included as part of the application.
 
-Personal summaries become more useful to explore as reports accumulate—for example, around 30–50 reports—but this is a practical illustration, not a validated statistical threshold.
+Personal summaries become more useful to explore as reports accumulate—for example, around 30–50 reports. the more the better—but this is a practical illustration.
 
-Reports represent **suspected encounters**, not confirmed cheating. All encounters submitted by users are speculative, and personal summaries reflect those reports.
+Reports represent **suspected encounters**, not confirmed cheating. All statistics and recommendations are based on user opinions, not verified evidence.
+
+In saying that, if you're someone who thinks everyone is always cheating and don't admit to your own limit-tations or "skill-issue" youre going to have a wide amount of false reports. watch playback, investigate profiles, and remember tarkov, tarkovs. Sometimes its just chance or the player has over 10k hrs. Sometimes theyre lv 10, w/ a 1.8 kd wiping the map.
 
 ## Run locally
 
@@ -177,24 +181,66 @@ Open [127.0.0.1:5500](http://127.0.0.1:5500). VS Code Live Server on the same po
 
 `js/api.js` selects the local API when the frontend hostname is `localhost` or `127.0.0.1`; otherwise, it selects the deployed API. Backend CORS permits both local frontend hostnames on port 5500 and the deployed frontend origin.
 
+
 ## Testing
 
-The checked-in automated suite contains two API tests:
+Tushonka has **41 passing automated tests**, covering authentication, authorization, account management, encounter reporting, and PostgreSQL integration.
 
-- Repeated failed login attempts reach the configured rate limit.
-- Repeated account registrations reach the configured rate limit.
+The full suite was verified locally using Python 3.12 and pytest.
 
-Run them from `backend/` with the virtual environment activated:
+**Latest local result: 41 passed, 0 failed, 0 skipped.**
+
+### Test coverage
+
+| Area | Verification |
+| --- | --- |
+| Registration | Account creation, duplicate usernames, input validation, and password hashing |
+| Authentication | Valid and invalid credentials, missing tokens, expired tokens, and invalid signatures |
+| Authorization | Account access restrictions, ownership checks, and token invalidation after account deletion |
+| Rate limiting | Repeated login attempts and registrations return HTTP 429 when limits are exceeded |
+| Encounter creation | Authentication requirements, required fields, valid inputs, and timestamp validation |
+| Account isolation | Users cannot retrieve or delete another account's encounters |
+| Encounter history | Empty results, pagination, and invalid query parameters |
+| Encounter deletion | Successful deletion, nonexistent records, and unauthorized requests |
+| PostgreSQL integration | Registration, login, authenticated access, and encounter persistence |
+
+### Running the tests
+
+From `backend/`, activate the virtual environment:
 
 ```bash
+source .venv/bin/activate
 python -m pytest -q
 ```
 
-Tests override database access with isolated in-memory SQLite and test-only configuration. GitHub Actions runs the suite on pushes and pull requests.
+The standard suite uses isolated SQLite databases. PostgreSQL integration tests require a separate local test database configured through `POSTGRES_TEST_DATABASE_URL`.
 
-Development also included manual checks of account creation, login/logout, refresh persistence, account isolation, encounter saving, history, deletion, and preview navigation. These manual checks are separate from the automated suite.
+Without that configuration, the two PostgreSQL integration tests are skipped.
 
-Automated browser testing, comprehensive API coverage, and PostgreSQL integration tests are not currently included. Existing checks are not a full security audit.
+### PostgreSQL verification
+
+Two integration tests were completed successfully against a dedicated local PostgreSQL database.
+
+These verify that authentication and encounter persistence work with PostgreSQL rather than relying entirely on SQLite.
+
+The PostgreSQL test fixture only accepts local database connections and refuses databases containing existing tables.
+
+### Test isolation
+
+Tests use temporary accounts and dummy credentials. Production database credentials are not included in the repository.
+
+Automated tests use isolated SQLite databases for API behavior and a dedicated PostgreSQL database for integration verification.
+
+### Test files
+
+| File | Purpose |
+| --- | --- |
+| `tests/test_security.py` | Login and registration rate limiting |
+| `tests/test_encounters.py` | Authentication, authorization, encounter operations, validation, and pagination |
+| `tests/test_postgresql.py` | PostgreSQL integration testing |
+
+The existing GitHub Actions workflow runs backend tests automatically on pushes and pull requests. The expanded 41-test suite has been verified locally; the updated suite has also been verified by github actions.
+
 
 ## Deployment
 
